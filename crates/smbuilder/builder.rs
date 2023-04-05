@@ -17,8 +17,9 @@ use crate::*;
 #[cfg(test)]
 mod tests{}
 
+
 pub struct SmbuilderBuilder {
-    spec: common::BuildSpec,
+    spec: BuildSpec,
 }
 
 impl SmbuilderBuilder {
@@ -48,17 +49,17 @@ impl SmbuilderBuilder {
         self
     }
 
-    pub fn add_makeopt(mut self, new_makeopt: String) -> Self {
+    pub fn add_makeopt(mut self, new_makeopt: Makeopt) -> Self {
         self.spec.additional_makeopts.push(new_makeopt);
         self
     }
 
-    pub fn append_makeopts(mut self, mut makeopts: Vec<String>) -> Self {
+    pub fn append_makeopts(mut self, mut makeopts: Vec<Makeopt>) -> Self {
         self.spec.additional_makeopts.append(&mut makeopts);
         self
     }
 
-    pub fn set_makeopts(mut self, makeopts: Vec<String>) -> Self {
+    pub fn set_makeopts(mut self, makeopts: Vec<Makeopt>) -> Self {
         self.spec.additional_makeopts = makeopts;
         self
     }
@@ -111,5 +112,25 @@ impl SmbuilderBuilder {
     pub fn rom(mut self, value: Rom) -> Self {
         self.spec.rom = value;
         self
+    }
+}
+
+pub struct Smbuilder {
+    spec: BuildSpec,
+    current_cmd_stdout: Vec<String>, // supposed to be output of a BufReader object .lines() call (so lines from the stdout), too lazy to find type for now
+    make_cmd: String, // the actual command
+}
+
+impl Smbuilder {
+    pub fn builder() -> SmbuilderBuilder {
+        SmbuilderBuilder::new()
+    }
+
+    fn setup() {
+
+    }
+
+    pub fn compile(self) -> &mut ChildStdout {
+        self.setup_folders()
     }
 }

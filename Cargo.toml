@@ -12,3 +12,4 @@ test = true
 crate-type = ["lib"]
 
 [dependencies]
+git2 = "0.17.0"

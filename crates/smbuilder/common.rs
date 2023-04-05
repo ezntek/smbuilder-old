@@ -19,6 +19,11 @@ pub enum Region {
     SH
 }
 
+pub enum MakeoptCompatible {
+    Number(u8),
+    String(String),
+}
+
 impl ToString for Region {
     fn to_string(&self) -> String {
         match self {
@@ -28,6 +33,10 @@ impl ToString for Region {
             Region::SH => "sh".to_string(),
         }
     }
+}
+pub struct Makeopt {
+    pub key: String,
+    pub value: MakeoptCompatible,
 }
 
 pub struct Rom {
@@ -86,7 +95,7 @@ pub struct BuildSpec {
     // The name of the build, it will default to the name of the repo if left empty.
     pub name: String,
     // Any additional makeopts to be added to the make call. Will include the jobs.
-    pub additional_makeopts: Vec<String>,
+    pub additional_makeopts: Vec<Makeopt>,
     // The executable path. Not playable if tempty, playable if not empty.
     pub executable_path: Option<String>,
     // A custom texture pack (There can only be one!)

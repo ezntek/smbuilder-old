@@ -1,0 +1,34 @@
+[build_settings]
+    jobs = 4
+    name = "foobar"
+    executable_path = "/path/to/sm64.region.f3dex2e"
+
+    [build_settings.repo]
+        name = "My SM64 PC Port"
+        url = "protocol://link.to/the/repo.git"
+        branch = "master"
+        supports_packs = true
+        supports_textures = false
+
+    [build_settings.rom]
+        path = "/path/to/baserom.z64"
+        region = "us"
+
+    [[build_settings.additional_makeopts]]
+        key = "DISCORDRPC"
+        value = "1"
+
+    [[build_settings.additional_makeopts]]
+        key = "OSX_BUILD"
+        value = "0"
+
+
+[[dynos_packs]]
+    path = "/path/to/pack"
+    label = "my pack"
+    enabled = false
+
+[[dynos_packs]]
+    path = "/path/to/pack"
+    label = "my pack 2"
+    enabled = true
