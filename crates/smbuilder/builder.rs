@@ -126,11 +126,14 @@ impl Smbuilder {
         SmbuilderBuilder::new()
     }
 
-    fn setup() {
+    fn setup(&self) {
+        // set up the home dir for easy access
+        let home_dir = std::env!("HOME");
+        let base_dir = Path::new(home_dir).join(".local/share/smbuilder");
 
-    }
+        // create the build directory
+        std::fs::create_dir(&base_dir.join(&self.spec.name)).unwrap();
 
-    pub fn compile(self) -> &mut ChildStdout {
-        self.setup_folders()
+        // deserialize the build spec
     }
 }

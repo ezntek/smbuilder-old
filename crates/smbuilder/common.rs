@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use std::path::Path;
+
 pub enum Region {
     US,
     EU,
@@ -40,8 +42,8 @@ pub struct Makeopt {
 }
 
 pub struct Rom {
-    pub path: String,
     pub region: Region,
+    pub path: Path,
 }
 
 impl Rom {
@@ -74,9 +76,9 @@ impl Repo {
 }
 
 pub struct DynOSPack {
-    pub path: String,
-    pub label: String,
     pub enabled: bool,
+    pub label: String,
+    pub path: Path,
 }
 
 // The Build Specification Structure. Contains all the metadata required to run the Smbuilder class and the SmbuilderBuilder class, etc.
@@ -100,10 +102,24 @@ pub struct BuildSpec {
     pub executable_path: Option<String>,
     // A custom texture pack (There can only be one!)
     pub texture_pack_path: Option<String>,
-    // Any DynOS packs the user wishes to add
-    pub dynos_packs: Vec<DynOSPack>,
     // The repo struct
     pub repo: Repo,
     // The rom struct
     pub rom: Rom,
+    // Any DynOS packs the user wishes to add
+    pub dynos_packs: Vec<DynOSPack>,
+}
+
+pub struct TomlBuildSettingsSpec {
+    pub jobs: u8,
+    pub name: String,
+    pub repo: Repo,
+    pub additional_makeopts: Vec<Makeopt>,
+    pub executable_path: Path,
+    pub rom: Rom,
+}
+
+pub struct TomlSpec {
+    pub dynos_packs: Vec<DynOSPack>,
+    pub build_settings: TomlBuildSettingsSpec,
 }
