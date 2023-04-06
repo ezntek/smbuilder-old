@@ -127,9 +127,8 @@ impl Smbuilder {
     }
 
     fn setup(&self) {
-        // set up the home dir for easy access
-        let home_dir = std::env!("HOME");
-        let base_dir = Path::new(home_dir).join(".local/share/smbuilder");
+        // set up the base directory for easy access later
+        let base_dir = Path::new(std::env!("HOME")).join(".local/share/smbuilder");
 
         // create the build directory
         std::fs::create_dir(&base_dir.join(&self.spec.name)).unwrap();

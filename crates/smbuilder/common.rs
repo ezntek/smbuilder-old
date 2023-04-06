@@ -12,7 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use std::path::Path;
+use std::path::{PathBuf,Path};
+
+fn get_dummy_base_path() -> PathBuf {
+    Path::new(std::env!("HOME")).join(".local/share/smbuilder")
+}
 
 pub enum Region {
     US,
@@ -43,13 +47,13 @@ pub struct Makeopt {
 
 pub struct Rom {
     pub region: Region,
-    pub path: Path,
+    pub path: PathBuf,
 }
 
 impl Rom {
     pub fn default() -> Rom {
         Rom {
-            path: String::new(),
+            path: get_dummy_base_path(),
             region: Region::US,
         }
     }
@@ -78,7 +82,7 @@ impl Repo {
 pub struct DynOSPack {
     pub enabled: bool,
     pub label: String,
-    pub path: Path,
+    pub path: PathBuf,
 }
 
 // The Build Specification Structure. Contains all the metadata required to run the Smbuilder class and the SmbuilderBuilder class, etc.
@@ -115,7 +119,7 @@ pub struct TomlBuildSettingsSpec {
     pub name: String,
     pub repo: Repo,
     pub additional_makeopts: Vec<Makeopt>,
-    pub executable_path: Path,
+    pub executable_path: PathBuf,
     pub rom: Rom,
 }
 

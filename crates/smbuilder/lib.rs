@@ -20,11 +20,12 @@ use std::path::Path;
 pub use crate::builder::*;
 pub use crate::common::*;
 
-fn init() {
+pub fn init() {
     // Set the home dir for easy access
     let home_dir = std::env!("HOME");
 
     // Create ~/.local/share/smbuilder
     std::fs::create_dir(Path::new(&home_dir).join(".local/share/smbuilder"))
-        .expect(format!("Failed to create {}/.local/share/smbuilder! Perhaps the directory already exists?", home_dir).as_str());
+        .expect(format!("Failed to create {}/.local/share/smbuilder! Perhaps the directory already exists?", home_dir)
+        .as_str());
 }
