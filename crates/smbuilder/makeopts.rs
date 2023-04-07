@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#[allow(dead_code)]
 pub enum RenderAPI {
     GL,
     GLLegacy,
@@ -20,8 +19,6 @@ pub enum RenderAPI {
     D3D12,
 }
 
-
-#[allow(dead_code)]
 pub enum Sm64exCoopRenderAPI {
     GL,
     GLLegacy,
@@ -30,49 +27,39 @@ pub enum Sm64exCoopRenderAPI {
     Dummy,
 }
 
-#[allow(dead_code)]
 pub enum Render96WindowAPI {
     SDL2,
     DXGI,
 }
 
-
-#[allow(dead_code)]
 pub enum Sm64exWindowAPI {
     SDL1,
     SDL2,
     DXGI,
 }
 
-
-#[allow(dead_code)]
 pub enum Sm64exCoopWindowAPI {
     SDL1,
     SDL2,
     DXGI,
 }
 
-
-#[allow(dead_code)]
 pub enum Sm64exAudioAPI {
     SDL1,
     SDL2,
 }
 
-#[allow(dead_code)]
 pub enum Sm64exCoopAudioAPI {
     SDL1,
     SDL2,
     Dummy,
 }
 
-#[allow(dead_code)]
 pub enum Sm64exControllerAPI {
     SDL1,
     SDL2,
 }
 
-#[allow(dead_code)]
 pub enum Render96exMakeopts {
     Debug,
     Compare,
@@ -95,8 +82,6 @@ pub enum Render96exMakeopts {
     WindowsBuild,
 }
 
-
-#[allow(dead_code)]
 pub enum Sm64exMakeopts {
     Debug,
     Compare,
@@ -122,8 +107,6 @@ pub enum Sm64exMakeopts {
     WindowsBuild,
 }
 
-
-#[allow(dead_code)]
 pub enum Sm64exCoopMakeopts {
     Debug,
     Development,
@@ -156,12 +139,12 @@ pub enum Sm64exCoopMakeopts {
     WindowsBuild,
 }
 
-pub trait Makeopts {
+pub trait MakeoptsType {
     fn get_defaults() -> Vec<Self> where
         Self: Sized;
 }
 
-impl Makeopts for Render96exMakeopts {
+impl MakeoptsType for Render96exMakeopts {
     fn get_defaults() -> Vec<Self> where
             Self: Sized {
 
@@ -176,7 +159,7 @@ impl Makeopts for Render96exMakeopts {
         ])
     }
 }
-impl Makeopts for Sm64exMakeopts {
+impl MakeoptsType for Sm64exMakeopts {
     fn get_defaults() -> Vec<Self> where
             Self: Sized {
 
@@ -196,7 +179,7 @@ impl Makeopts for Sm64exMakeopts {
     }
 }
 
-impl Makeopts for Sm64exCoopMakeopts {
+impl MakeoptsType for Sm64exCoopMakeopts {
     fn get_defaults() -> Vec<Self> where
             Self: Sized {
         

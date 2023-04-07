@@ -14,7 +14,9 @@
 
 
 use serde::{Deserialize, Serialize, de::Visitor};
-use std::path::{PathBuf, Path};
+use std::{path::{PathBuf, Path}, sync::Arc};
+
+use crate::makeopts::MakeoptsType;
 
 fn get_dummy_base_path() -> PathBuf {
     Path::new(std::env!("HOME")).join(".local/share/smbuilder")
@@ -31,11 +33,6 @@ pub enum Region {
     EU,
     JP,
     SH
-}
-
-pub struct Makeopt {
-    pub key: String,
-    pub value: String,
 }
 
 pub struct Rom {
@@ -88,14 +85,14 @@ pub struct DynOSPack {
 // * A custom texture pack (think Render96)
 // * DynOS data packs (also think Render96, but other ports like sm64ex-coop supports them too)
 //
-pub struct BuildSpec {
+pub struct BuildSpec<M: MakeoptsType> {
     // The number of jobs to be put together with the MAKEOPTS during the compile stage.
     pub jobs: u8,
     // The name of the build, it will default to the name of the repo if left empty.
     pub name: String,
     // Any additional makeopts to be added to the make call. Will include the jobs.
-    pub additional_makeopts: Vec<Makeopt>,
-    // The executable path. Not playable if tempty, playable if not empty.
+    pub additional_makeopts: Vec<M>,
+    // The executable path. Not playable if empty, playable if not empty.
     pub executable_path: Option<String>,
     // A custom texture pack (There can only be one!)
     pub texture_pack_path: Option<String>,
@@ -107,16 +104,7 @@ pub struct BuildSpec {
     pub dynos_packs: Vec<DynOSPack>,
 }
 
-pub struct TomlBuildSettingsSpec {
-    pub jobs: u8,
-    pub name: String,
-    pub repo: Repo,
-    pub additional_makeopts: Vec<Makeopt>,
-    pub executable_path: PathBuf,
-    pub rom: Rom,
-}
-
-pub struct TomlSpec {
+pub struct TomlSpec<M: MakeoptsType> {
     pub dynos_packs: Vec<DynOSPack>,
-    pub build_settings: TomlBuildSettingsSpec,
+    pub build_settings: BuildSpec<M>,
 }

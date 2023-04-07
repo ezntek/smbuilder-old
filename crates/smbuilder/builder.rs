@@ -19,12 +19,12 @@ use crate::prelude::*;
 mod tests{}
 
 
-pub struct SmbuilderBuilder {
-    spec: BuildSpec,
+pub struct SmbuilderBuilder<M: MakeoptsType> {
+    spec: BuildSpec<M>,
 }
 
-impl SmbuilderBuilder {
-    pub fn new() -> SmbuilderBuilder {
+impl<M: MakeoptsType> SmbuilderBuilder<M> {
+    pub fn new() -> SmbuilderBuilder<M> {
         let default_repo = Repo::default();
         SmbuilderBuilder { 
             spec: BuildSpec {
@@ -50,17 +50,17 @@ impl SmbuilderBuilder {
         self
     }
 
-    pub fn add_makeopt(mut self, new_makeopt: Makeopt) -> Self {
+    pub fn add_makeopt(mut self, new_makeopt: M) -> Self {
         self.spec.additional_makeopts.push(new_makeopt);
         self
     }
 
-    pub fn append_makeopts(mut self, mut makeopts: Vec<Makeopt>) -> Self {
+    pub fn append_makeopts(mut self, mut makeopts: Vec<M>) -> Self {
         self.spec.additional_makeopts.append(&mut makeopts);
         self
     }
 
-    pub fn set_makeopts(mut self, makeopts: Vec<Makeopt>) -> Self {
+    pub fn set_makeopts(mut self, makeopts: Vec<M>) -> Self {
         self.spec.additional_makeopts = makeopts;
         self
     }
@@ -116,14 +116,14 @@ impl SmbuilderBuilder {
     }
 }
 
-pub struct Smbuilder {
-    spec: BuildSpec,
+pub struct Smbuilder<M: MakeoptsType> {
+    spec: BuildSpec<M>,
     current_cmd_stdout: Vec<String>, // supposed to be output of a BufReader object .lines() call (so lines from the stdout), too lazy to find type for now
     make_cmd: String, // the actual command
 }
 
-impl Smbuilder {
-    pub fn builder() -> SmbuilderBuilder {
+impl<M: MakeoptsType> Smbuilder<M> {
+    pub fn builder() -> SmbuilderBuilder<M> {
         SmbuilderBuilder::new()
     }
 
