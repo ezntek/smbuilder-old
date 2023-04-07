@@ -12,8 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use crate::common::Versions;
-
+#[allow(dead_code)]
 pub enum RenderAPI {
     GL,
     GLLegacy,
@@ -21,6 +20,8 @@ pub enum RenderAPI {
     D3D12,
 }
 
+
+#[allow(dead_code)]
 pub enum Sm64exCoopRenderAPI {
     GL,
     GLLegacy,
@@ -29,39 +30,49 @@ pub enum Sm64exCoopRenderAPI {
     Dummy,
 }
 
+#[allow(dead_code)]
 pub enum Render96WindowAPI {
     SDL2,
     DXGI,
 }
 
+
+#[allow(dead_code)]
 pub enum Sm64exWindowAPI {
     SDL1,
     SDL2,
     DXGI,
 }
 
+
+#[allow(dead_code)]
 pub enum Sm64exCoopWindowAPI {
     SDL1,
     SDL2,
     DXGI,
 }
 
+
+#[allow(dead_code)]
 pub enum Sm64exAudioAPI {
     SDL1,
     SDL2,
 }
 
+#[allow(dead_code)]
 pub enum Sm64exCoopAudioAPI {
     SDL1,
     SDL2,
     Dummy,
 }
 
+#[allow(dead_code)]
 pub enum Sm64exControllerAPI {
     SDL1,
     SDL2,
 }
 
+#[allow(dead_code)]
 pub enum Render96exMakeopts {
     Debug,
     Compare,
@@ -84,6 +95,8 @@ pub enum Render96exMakeopts {
     WindowsBuild,
 }
 
+
+#[allow(dead_code)]
 pub enum Sm64exMakeopts {
     Debug,
     Compare,
@@ -109,6 +122,8 @@ pub enum Sm64exMakeopts {
     WindowsBuild,
 }
 
+
+#[allow(dead_code)]
 pub enum Sm64exCoopMakeopts {
     Debug,
     Development,
@@ -133,7 +148,7 @@ pub enum Sm64exCoopMakeopts {
     Profile,
     Headless,
     Icon,
-    UseAppMacOS,
+    UseMacOSApp,
     RenderApi(Sm64exCoopRenderAPI),
     WindowApi(Sm64exCoopWindowAPI),
     AudioApi(Sm64exCoopAudioAPI),
@@ -141,14 +156,16 @@ pub enum Sm64exCoopMakeopts {
     WindowsBuild,
 }
 
-pub trait Makeopts {}
-impl Makeopts for Sm64exCoopMakeopts {}
-impl Makeopts for Sm64exMakeopts {}
-impl Makeopts for Render96exMakeopts {}
+pub trait Makeopts {
+    fn get_defaults() -> Vec<Self> where
+        Self: Sized;
+}
 
-fn get_default_makeopts(for_version: Versions) -> Vec<impl Makeopts> {
-    match for_version {
-        Versions::Render96ex => Vec::from([
+impl Makeopts for Render96exMakeopts {
+    fn get_defaults() -> Vec<Self> where
+            Self: Sized {
+
+        Vec::from([
             Render96exMakeopts::Compare,
             Render96exMakeopts::NonMatching,
             Render96exMakeopts::TargetArch(String::from("native")),
@@ -156,8 +173,14 @@ fn get_default_makeopts(for_version: Versions) -> Vec<impl Makeopts> {
             Render96exMakeopts::ExtendedOptionsMenu,
             Render96exMakeopts::RenderApi(RenderAPI::GL),
             Render96exMakeopts::WindowApi(Render96WindowAPI::SDL2),
-        ]),
-        Versions::Sm64ex => Vec::from([
+        ])
+    }
+}
+impl Makeopts for Sm64exMakeopts {
+    fn get_defaults() -> Vec<Self> where
+            Self: Sized {
+
+        Vec::from([
             Sm64exMakeopts::Compare,
             Sm64exMakeopts::NonMatching,
             Sm64exMakeopts::NoPie,
@@ -169,9 +192,24 @@ fn get_default_makeopts(for_version: Versions) -> Vec<impl Makeopts> {
             Sm64exMakeopts::AudioApi(Sm64exAudioAPI::SDL2),
             Sm64exMakeopts::ControllerApi(Sm64exControllerAPI::SDL2),
             
-        ]),
-        Versions::Sm64exCoop => Vec::from([
+        ])
+    }
+}
 
-        ]),
+impl Makeopts for Sm64exCoopMakeopts {
+    fn get_defaults() -> Vec<Self> where
+            Self: Sized {
+        
+        Vec::from([
+            Sm64exCoopMakeopts::ImmediateLoad,
+            Sm64exCoopMakeopts::BetterCamera,
+            Sm64exCoopMakeopts::NoDrawingDistance,
+            Sm64exCoopMakeopts::ExtendedOptionsMenu,
+            Sm64exCoopMakeopts::DiscordSdk,
+            Sm64exCoopMakeopts::OptLevel(-1),
+            Sm64exCoopMakeopts::DebugInfoLevel(2),
+            Sm64exCoopMakeopts::Icon,
+            Sm64exCoopMakeopts::UseMacOSApp,
+        ])
     }
 }

@@ -12,10 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-mod prelude;
-mod builder;
-mod common;
-mod makeopts;
+pub mod prelude;
+pub mod builder;
+pub mod common;
+pub mod makeopts;
 
 use std::path::Path;
 
