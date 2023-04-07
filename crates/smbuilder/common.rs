@@ -12,10 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use std::path::{PathBuf,Path};
+use serde::{Deserialize, Serialize, de::Visitor};
+use std::path::{PathBuf, Path};
 
 fn get_dummy_base_path() -> PathBuf {
     Path::new(std::env!("HOME")).join(".local/share/smbuilder")
+}
+
+pub enum Versions {
+    Render96ex,
+    Sm64ex,
+    Sm64exCoop,
 }
 
 pub enum Region {
@@ -25,24 +32,9 @@ pub enum Region {
     SH
 }
 
-pub enum MakeoptCompatible {
-    Number(u8),
-    String(String),
-}
-
-impl ToString for Region {
-    fn to_string(&self) -> String {
-        match self {
-            Region::EU => "eu".to_string(),
-            Region::US => "us".to_string(),
-            Region::JP => "jp".to_string(),
-            Region::SH => "sh".to_string(),
-        }
-    }
-}
 pub struct Makeopt {
     pub key: String,
-    pub value: MakeoptCompatible,
+    pub value: String,
 }
 
 pub struct Rom {
