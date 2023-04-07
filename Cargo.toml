@@ -15,3 +15,4 @@ crate-type = ["lib"]
 git2 = "0.17.0"
 serde = "1.0.159"
 serde_derive = "1.0.159"
+toml = "0.7.3"

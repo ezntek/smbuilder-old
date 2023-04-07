@@ -12,11 +12,36 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
-use serde::{Deserialize, Serialize, de::Visitor};
-use std::{path::{PathBuf, Path}, sync::Arc};
+use serde_derive;
+use std::path::{PathBuf, Path};
 
 use crate::makeopts::MakeoptsType;
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn test_region_se_de() {
+        use crate::common::*;
+        use toml;        
+        
+        #[derive(Debug, serde_derive::Serialize, serde_derive::Deserialize)]
+        struct Test {
+            region: Region
+        }
+
+        let t = Test {
+            region: Region::US
+        };
+
+        let s = toml::to_string(&t).unwrap();
+        println!("{}", s);
+
+        let t2: Test = toml::from_str(&s).unwrap();
+        println!("{:?}", t2);
+        
+        assert_eq!(t2.region, Region::US);
+    }
+}
 
 fn get_dummy_base_path() -> PathBuf {
     Path::new(std::env!("HOME")).join(".local/share/smbuilder")
@@ -28,6 +53,8 @@ pub enum Versions {
     Sm64exCoop,
 }
 
+#[derive(Debug, PartialEq, serde_derive::Deserialize, serde_derive::Serialize)]
+#[serde(rename_all = "lowercase")]
 pub enum Region {
     US,
     EU,
@@ -35,6 +62,8 @@ pub enum Region {
     SH
 }
 
+
+#[derive(serde_derive::Deserialize, serde_derive::Serialize)]
 pub struct Rom {
     pub region: Region,
     pub path: PathBuf,
@@ -49,6 +78,7 @@ impl Rom {
     }
 }
 
+#[derive(serde_derive::Deserialize, serde_derive::Serialize)]
 pub struct Repo {
     pub name: String,
     pub url: String,

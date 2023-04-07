@@ -145,8 +145,9 @@ pub trait MakeoptsType {
 }
 
 impl MakeoptsType for Render96exMakeopts {
-    fn get_defaults() -> Vec<Self> where
-            Self: Sized {
+    fn get_defaults() -> Vec<Self>
+    where
+        Self: Sized {
 
         Vec::from([
             Render96exMakeopts::Compare,
@@ -160,8 +161,9 @@ impl MakeoptsType for Render96exMakeopts {
     }
 }
 impl MakeoptsType for Sm64exMakeopts {
-    fn get_defaults() -> Vec<Self> where
-            Self: Sized {
+    fn get_defaults() -> Vec<Self>
+    where
+        Self: Sized {
 
         Vec::from([
             Sm64exMakeopts::Compare,
@@ -174,14 +176,14 @@ impl MakeoptsType for Sm64exMakeopts {
             Sm64exMakeopts::WindowApi(Sm64exWindowAPI::SDL2),
             Sm64exMakeopts::AudioApi(Sm64exAudioAPI::SDL2),
             Sm64exMakeopts::ControllerApi(Sm64exControllerAPI::SDL2),
-            
         ])
     }
 }
 
 impl MakeoptsType for Sm64exCoopMakeopts {
-    fn get_defaults() -> Vec<Self> where
-            Self: Sized {
+    fn get_defaults() -> Vec<Self>
+    where
+        Self: Sized {
         
         Vec::from([
             Sm64exCoopMakeopts::ImmediateLoad,
