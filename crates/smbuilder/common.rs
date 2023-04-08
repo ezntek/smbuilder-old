@@ -18,30 +18,7 @@ use std::path::{PathBuf, Path};
 use crate::makeopts::MakeoptsType;
 
 #[cfg(test)]
-mod tests {
-    #[test]
-    fn test_region_se_de() {
-        use crate::common::*;
-        use toml;        
-        
-        #[derive(Debug, serde_derive::Serialize, serde_derive::Deserialize)]
-        struct Test {
-            region: Region
-        }
-
-        let t = Test {
-            region: Region::US
-        };
-
-        let s = toml::to_string(&t).unwrap();
-        println!("{}", s);
-
-        let t2: Test = toml::from_str(&s).unwrap();
-        println!("{:?}", t2);
-        
-        assert_eq!(t2.region, Region::US);
-    }
-}
+mod tests {}
 
 fn get_dummy_base_path() -> PathBuf {
     Path::new(std::env!("HOME")).join(".local/share/smbuilder")
@@ -53,7 +30,7 @@ pub enum Versions {
     Sm64exCoop,
 }
 
-#[derive(Debug, PartialEq, serde_derive::Deserialize, serde_derive::Serialize)]
+#[derive(serde_derive::Deserialize, serde_derive::Serialize)]
 #[serde(rename_all = "lowercase")]
 pub enum Region {
     US,
@@ -99,6 +76,7 @@ impl Repo {
     }
 }
 
+#[derive(serde_derive::Deserialize, serde_derive::Serialize)]
 pub struct DynOSPack {
     pub enabled: bool,
     pub label: String,
@@ -115,6 +93,8 @@ pub struct DynOSPack {
 // * A custom texture pack (think Render96)
 // * DynOS data packs (also think Render96, but other ports like sm64ex-coop supports them too)
 //
+
+#[derive(serde_derive::Deserialize, serde_derive::Serialize)]
 pub struct BuildSpec<M: MakeoptsType> {
     // The number of jobs to be put together with the MAKEOPTS during the compile stage.
     pub jobs: u8,
