@@ -12,6 +12,38 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use serde_derive;
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn test() {
+        use crate::makeopts::*;
+
+        #[derive(Debug, PartialEq, Eq, serde_derive::Serialize, serde_derive::Deserialize)]
+        struct MyStruct {
+            test: Render96exMakeopts,
+        }
+
+        #[derive(Debug, PartialEq, Eq, serde_derive::Serialize, serde_derive::Deserialize)]
+        struct MyStruct2 {
+            test: String
+        }
+
+        let x = MyStruct {
+            test: Render96exMakeopts::TargetWeb,
+        };
+
+        let x_de = toml::to_string(&x).unwrap();
+        println!("{}", x_de);
+
+        let y = toml::from_str::<MyStruct2>(&x_de).unwrap();
+        println!("{:?}", y);
+    }
+}
+
+#[derive(Debug, PartialEq, Eq, serde_derive::Deserialize, serde_derive::Serialize)]
+#[serde(rename_all = "UPPERCASE")]
 pub enum RenderAPI {
     GL,
     GLLegacy,
@@ -19,6 +51,9 @@ pub enum RenderAPI {
     D3D12,
 }
 
+
+#[derive(Debug, PartialEq, Eq, serde_derive::Deserialize, serde_derive::Serialize)]
+#[serde(rename_all = "UPPERCASE")]
 pub enum Sm64exCoopRenderAPI {
     GL,
     GLLegacy,
@@ -27,114 +62,157 @@ pub enum Sm64exCoopRenderAPI {
     Dummy,
 }
 
+#[derive(Debug, PartialEq, Eq, serde_derive::Deserialize, serde_derive::Serialize)]
+#[serde(rename_all = "UPPERCASE")]
 pub enum Render96WindowAPI {
     SDL2,
     DXGI,
 }
 
+#[derive(Debug, PartialEq, Eq, serde_derive::Deserialize, serde_derive::Serialize)]
+#[serde(rename_all = "UPPERCASE")]
 pub enum Sm64exWindowAPI {
     SDL1,
     SDL2,
     DXGI,
 }
 
+#[derive(Debug, PartialEq, Eq, serde_derive::Deserialize, serde_derive::Serialize)]
+#[serde(rename_all = "UPPERCASE")]
 pub enum Sm64exCoopWindowAPI {
     SDL1,
     SDL2,
     DXGI,
 }
 
+#[derive(Debug, PartialEq, Eq, serde_derive::Deserialize, serde_derive::Serialize)]
+#[serde(rename_all = "UPPERCASE")]
 pub enum Sm64exAudioAPI {
     SDL1,
     SDL2,
 }
 
+#[derive(Debug, PartialEq, Eq, serde_derive::Deserialize, serde_derive::Serialize)]
+#[serde(rename_all = "UPPERCASE")]
 pub enum Sm64exCoopAudioAPI {
     SDL1,
     SDL2,
     Dummy,
 }
 
+#[derive(Debug, PartialEq, Eq, serde_derive::Deserialize, serde_derive::Serialize)]
+#[serde(rename_all = "UPPERCASE")]
 pub enum Sm64exControllerAPI {
     SDL1,
     SDL2,
 }
 
+#[derive(Debug, PartialEq, Eq, serde_derive::Deserialize, serde_derive::Serialize)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum Render96exMakeopts {
     Debug,
     Compare,
     NonMatching,
     TargetRpi,
     TargetWeb,
+    #[serde(rename = "OSX_BUILD")]
     OSXBuild,
     TargetArch(String),
     TargetBits(u8),
+    #[serde(rename = "BETTERCAMERA")]
     BetterCamera,
+    #[serde(rename = "NODRAWINGDISTANCE")]
     NoDrawingDistance,
     TextureFix,
+    #[serde(rename = "EXT_OPTIONS_MENU")]
     ExtendedOptionsMenu,
+    #[serde(rename = "TEXTSAVES")]
     TextSaves,
     ExternalData,
+    #[serde(rename = "DISCORDRPC")]
     DiscordRichPresence,
     RenderApi(RenderAPI),
     WindowApi(Render96WindowAPI),
+    #[serde(rename = "RMODERN")]
     ModernRendering,
     WindowsBuild,
 }
 
+
+#[derive(Debug, PartialEq, Eq, serde_derive::Deserialize, serde_derive::Serialize)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum Sm64exMakeopts {
     Debug,
     Compare,
     NonMatching,
     TargetRpi,
     TargetWeb,
+    #[serde(rename = "OSX_BUILD")]
     OSXBuild,
     NoPie,
     TargetArch(String),
     TargetBits(u8),
+    #[serde(rename = "BETTERCAMERA")]
     BetterCamera,
+    #[serde(rename = "NODRAWINGDISTANCE")]
     NoDrawingDistance,
     TextureFix,
+    #[serde(rename = "EXT_OPTIONS_MENU")]
     ExtendedOptionsMenu,
+    #[serde(rename = "TEXTSAVES")]
     TextSaves,
     ExternalData,
+    #[serde(rename = "DISCORDRPC")]
     DiscordRichPresence,
     RenderApi(RenderAPI),
     WindowApi(Sm64exWindowAPI),
     AudioApi(Sm64exAudioAPI),
     ControllerApi(Sm64exControllerAPI),
+    #[serde(rename = "RMODERN")]
     ModernRendering,
     WindowsBuild,
 }
 
+#[derive(Debug, PartialEq, Eq, serde_derive::Deserialize, serde_derive::Serialize)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum Sm64exCoopMakeopts {
     Debug,
     Development,
     TargetN64, 
     TargetRpi,
     TargetWeb,
+    #[serde(rename = "OSX_BUILD")]
     OSXBuild,
     TargetArch(String),
     TargetBits(u8),
+    #[serde(rename = "IMMEDIATELOAD")]
     ImmediateLoad,
+    #[serde(rename = "BETTERCAMERA")]
     BetterCamera,
+    #[serde(rename = "NODRAWINGDISTANCE")]
     NoDrawingDistance,
     TextureFix,
+    #[serde(rename = "EXT_OPTIONS_MENU")]
     ExtendedOptionsMenu,
+    #[serde(rename = "TEXTSAVES")]
     TextSaves,
     ExternalData,
+    #[serde(rename = "DISCORDRPC")]
     DiscordRichPresence,
     DiscordSdk,
+    #[serde(rename = "DOCKERBUILD")]
     DockerBuild,
     OptLevel(i8),
     DebugInfoLevel(u8),
     Profile,
     Headless,
     Icon,
+    #[serde(rename = "USE_APP")]
     UseMacOSApp,
     RenderApi(Sm64exCoopRenderAPI),
     WindowApi(Sm64exCoopWindowAPI),
     AudioApi(Sm64exCoopAudioAPI),
+    #[serde(rename = "RMODERN")]
     ModernRendering,
     WindowsBuild,
 }
