@@ -18,7 +18,6 @@ use crate::prelude::*;
 #[cfg(test)]
 mod tests{}
 
-
 pub struct SmbuilderBuilder<M: MakeoptsType> {
     spec: BuildSpec<M>,
 }

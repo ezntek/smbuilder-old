@@ -27,7 +27,13 @@ mod tests {
 
         #[derive(Debug, PartialEq, Eq, serde_derive::Serialize, serde_derive::Deserialize)]
         struct MyStruct2 {
-            test: String
+            test: MyStruct2Inner
+        }
+
+        #[derive(Debug, PartialEq, Eq, serde_derive::Serialize, serde_derive::Deserialize)]
+        struct MyStruct2Inner {
+            opt: String,
+            arg: Option<String>,
         }
 
         let x = MyStruct {
@@ -37,8 +43,9 @@ mod tests {
         let x_de = toml::to_string(&x).unwrap();
         println!("{}", x_de);
 
-        let y = toml::from_str::<MyStruct2>(&x_de).unwrap();
+        let y: MyStruct2 = toml::from_str(&x_de).unwrap();
         println!("{:?}", y);
+        
     }
 }
 
@@ -108,6 +115,7 @@ pub enum Sm64exControllerAPI {
 }
 
 #[derive(Debug, PartialEq, Eq, serde_derive::Deserialize, serde_derive::Serialize)]
+#[serde(tag = "opt", content = "arg")]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum Render96exMakeopts {
     Debug,
@@ -138,8 +146,8 @@ pub enum Render96exMakeopts {
     WindowsBuild,
 }
 
-
 #[derive(Debug, PartialEq, Eq, serde_derive::Deserialize, serde_derive::Serialize)]
+#[serde(tag = "opt", content = "arg")]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum Sm64exMakeopts {
     Debug,
@@ -174,6 +182,7 @@ pub enum Sm64exMakeopts {
 }
 
 #[derive(Debug, PartialEq, Eq, serde_derive::Deserialize, serde_derive::Serialize)]
+#[serde(tag = "opt", content = "arg")]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum Sm64exCoopMakeopts {
     Debug,
@@ -225,8 +234,8 @@ pub trait MakeoptsType {
 impl MakeoptsType for Render96exMakeopts {
     fn get_defaults() -> Vec<Self>
     where
-        Self: Sized {
-
+        Self: Sized
+    {
         Vec::from([
             Render96exMakeopts::Compare,
             Render96exMakeopts::NonMatching,
@@ -241,8 +250,8 @@ impl MakeoptsType for Render96exMakeopts {
 impl MakeoptsType for Sm64exMakeopts {
     fn get_defaults() -> Vec<Self>
     where
-        Self: Sized {
-
+        Self: Sized
+    {
         Vec::from([
             Sm64exMakeopts::Compare,
             Sm64exMakeopts::NonMatching,
@@ -261,8 +270,8 @@ impl MakeoptsType for Sm64exMakeopts {
 impl MakeoptsType for Sm64exCoopMakeopts {
     fn get_defaults() -> Vec<Self>
     where
-        Self: Sized {
-        
+        Self: Sized
+    {    
         Vec::from([
             Sm64exCoopMakeopts::ImmediateLoad,
             Sm64exCoopMakeopts::BetterCamera,
