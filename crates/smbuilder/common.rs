@@ -13,12 +13,61 @@
 // limitations under the License.
 
 use serde_derive;
+use std::fs;
 use std::path::{PathBuf, Path};
 
 use crate::makeopts::MakeoptsType;
 
 #[cfg(test)]
-mod tests {}
+mod tests {
+    use crate::{makeopts::Render96exMakeopts, prelude::{DynOSPack, TomlSpec}};
+
+    #[test]
+    fn test_de_spec() {
+        let toml_str = "
+[build_settings]
+    jobs = 4
+    name = \"foobar\"
+    executable_path = \"/path/to/sm64.region.f3dex2e\"
+
+    [build_settings.repo]
+        name = \"My SM64 PC Port\"
+        url = \"protocol://link.to/the/repo.git\"
+        branch = \"master\"
+        supports_packs = true
+        supports_textures = false
+
+    [build_settings.rom]
+        path = \"/path/to/baserom.z64\"
+        region = \"us\"
+
+    [[build_settings.additional_makeopts]]
+        opt = \"DISCORDRPC\"
+
+    [[build_settings.additional_makeopts]]
+        opt = \"OSX_BUILD\"
+
+    [[build_settings.additional_makeopts]]
+        opt = \"TARGET_ARCH\"
+        arg = \"native\"
+
+[[dynos_packs]]
+    path = \"/path/to/pack\"
+    label = \"my pack\"
+    enabled = false
+
+[[dynos_packs]]
+    path = \"/path/to/pack\"
+    label = \"my pack 2\"
+    enabled = true
+";
+
+        let s = toml::from_str::<TomlSpec<Render96exMakeopts>>(&toml_str).unwrap();
+        let mut spec = s.build_settings;
+        spec.dynos_packs = s.dynos_packs;
+        println!("{:?}",spec);
+    }
+}
 
 fn get_dummy_base_path() -> PathBuf {
     Path::new(std::env!("HOME")).join(".local/share/smbuilder")
@@ -30,7 +79,7 @@ pub enum Versions {
     Sm64exCoop,
 }
 
-#[derive(serde_derive::Deserialize, serde_derive::Serialize)]
+#[derive(serde_derive::Deserialize, serde_derive::Serialize, Debug)]
 #[serde(rename_all = "lowercase")]
 pub enum Region {
     US,
@@ -40,7 +89,7 @@ pub enum Region {
 }
 
 
-#[derive(serde_derive::Deserialize, serde_derive::Serialize)]
+#[derive(serde_derive::Deserialize, serde_derive::Serialize, Debug)]
 pub struct Rom {
     pub region: Region,
     pub path: PathBuf,
@@ -55,7 +104,7 @@ impl Rom {
     }
 }
 
-#[derive(serde_derive::Deserialize, serde_derive::Serialize)]
+#[derive(serde_derive::Deserialize, serde_derive::Serialize, Debug)]
 pub struct Repo {
     pub name: String,
     pub url: String,
@@ -76,7 +125,7 @@ impl Repo {
     }
 }
 
-#[derive(serde_derive::Deserialize, serde_derive::Serialize)]
+#[derive(serde_derive::Deserialize, serde_derive::Serialize, Debug)]
 pub struct DynOSPack {
     pub enabled: bool,
     pub label: String,
@@ -94,7 +143,7 @@ pub struct DynOSPack {
 // * DynOS data packs (also think Render96, but other ports like sm64ex-coop supports them too)
 //
 
-#[derive(serde_derive::Deserialize, serde_derive::Serialize)]
+#[derive(serde_derive::Deserialize, serde_derive::Serialize, Debug)]
 pub struct BuildSpec<M: MakeoptsType> {
     // The number of jobs to be put together with the MAKEOPTS during the compile stage.
     pub jobs: u8,
@@ -114,6 +163,17 @@ pub struct BuildSpec<M: MakeoptsType> {
     pub dynos_packs: Vec<DynOSPack>,
 }
 
+impl<M: MakeoptsType + for<'a> serde::Deserialize<'a>> BuildSpec<M> {
+    pub fn from_file<P: AsRef<Path>>(path: P) -> BuildSpec<M>{
+        let toml_str = fs::read_to_string(path).unwrap();
+        let s = toml::from_str::<TomlSpec<M>>(&toml_str).unwrap();
+        let mut spec = s.build_settings;
+        spec.dynos_packs = s.dynos_packs;
+        spec
+    }
+}
+
+#[derive(serde_derive::Serialize, serde_derive::Deserialize)]
 pub struct TomlSpec<M: MakeoptsType> {
     pub dynos_packs: Vec<DynOSPack>,
     pub build_settings: BuildSpec<M>,

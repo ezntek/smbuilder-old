@@ -126,6 +126,8 @@ impl<M: MakeoptsType> Smbuilder<M> {
         SmbuilderBuilder::new()
     }
 
+    
+
     fn setup(&self) {
         // set up the base directory for easy access later
         let base_dir = Path::new(std::env!("HOME")).join(".local/share/smbuilder");

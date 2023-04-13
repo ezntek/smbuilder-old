@@ -15,13 +15,14 @@
         region = "us"
 
     [[build_settings.additional_makeopts]]
-        key = "DISCORDRPC"
-        value = "1"
+        opt = "DISCORDRPC"
 
     [[build_settings.additional_makeopts]]
-        key = "OSX_BUILD"
-        value = "0"
+        opt = "OSX_BUILD"
 
+    [[build_settings.additional_makeopts]]
+        opt = "TARGET_ARCH"
+        arg = "native"
 
 [[dynos_packs]]
     path = "/path/to/pack"
