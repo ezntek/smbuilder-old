@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use std::path::{Path,PathBuf};
+use std::{path::{Path,PathBuf}, fs, any::Any};
 use crate::prelude::*;
 
 #[cfg(test)]
@@ -119,22 +119,37 @@ pub struct Smbuilder<M: MakeoptsType> {
     spec: BuildSpec<M>,
     current_cmd_stdout: Vec<String>, // supposed to be output of a BufReader object .lines() call (so lines from the stdout), too lazy to find type for now
     make_cmd: String, // the actual command
+    base_dir: PathBuf,
 }
 
 impl<M: MakeoptsType> Smbuilder<M> {
     pub fn builder() -> SmbuilderBuilder<M> {
         SmbuilderBuilder::new()
-    }
+    } 
 
-    
-
-    fn setup(&self) {
+    pub fn setup(spec: BuildSpec<M>) -> Smbuilder<M> {
         // set up the base directory for easy access later
         let base_dir = Path::new(std::env!("HOME")).join(".local/share/smbuilder");
 
         // create the build directory
-        std::fs::create_dir(&base_dir.join(&self.spec.name)).unwrap();
+        std::fs::create_dir(&base_dir.join(&spec.name)).unwrap();
 
-        // deserialize the build spec
+        Smbuilder {
+            spec: spec,
+            current_cmd_stdout: vec![],
+            make_cmd: String::from("make"),
+            base_dir: base_dir,
+        }
+    }
+
+    pub fn build(&mut self) {
+        // clone the repository
+        
+        git2::Repository::clone( // TODO: clone with branch and depth (possibly)
+            &self.spec.repo.url,
+            &self.base_dir).unwrap();
+        
+        // copy over the baserom
+        fs::copy((),()) // TODO: make this valid
     }
 }

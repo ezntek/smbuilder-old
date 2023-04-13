@@ -163,7 +163,10 @@ pub struct BuildSpec<M: MakeoptsType> {
     pub dynos_packs: Vec<DynOSPack>,
 }
 
-impl<M: MakeoptsType + for<'a> serde::Deserialize<'a>> BuildSpec<M> {
+impl<M> BuildSpec<M>
+where
+    M: MakeoptsType + for<'a> serde::Deserialize<'a>
+{
     pub fn from_file<P: AsRef<Path>>(path: P) -> BuildSpec<M>{
         let toml_str = fs::read_to_string(path).unwrap();
         let s = toml::from_str::<TomlSpec<M>>(&toml_str).unwrap();
@@ -175,6 +178,6 @@ impl<M: MakeoptsType + for<'a> serde::Deserialize<'a>> BuildSpec<M> {
 
 #[derive(serde_derive::Serialize, serde_derive::Deserialize)]
 pub struct TomlSpec<M: MakeoptsType> {
-    pub dynos_packs: Vec<DynOSPack>,
     pub build_settings: BuildSpec<M>,
+    pub dynos_packs: Vec<DynOSPack>,
 }
