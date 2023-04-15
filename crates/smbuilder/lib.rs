@@ -27,4 +27,6 @@ pub fn init() {
     std::fs::create_dir(Path::new(&home_dir).join(".local/share/smbuilder"))
         .expect(format!("Failed to create {}/.local/share/smbuilder! Perhaps the directory already exists?", home_dir)
         .as_str());
+
+    // Create a repos.toml file
 }

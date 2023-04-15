@@ -12,11 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use std::{path::{Path,PathBuf}, fs, any::Any};
-use crate::prelude::*;
+use std::{path::{Path,PathBuf}, fs, io::Write, process::Command};
+use crate::{prelude::*, makeopts};
 
 #[cfg(test)]
-mod tests{}
+mod tests{
+    #[test]
+    fn wee() {
+        std::process::Command::new("cd").arg("../").spawn().unwrap();
+        let pwdout = String::from_utf8(std::process::Command::new("pwd").output().unwrap().stdout).unwrap();
+        println!("{}",pwdout);
+    }
+}
 
 pub struct SmbuilderBuilder<M: MakeoptsType> {
     spec: BuildSpec<M>,
@@ -64,7 +71,7 @@ impl<M: MakeoptsType> SmbuilderBuilder<M> {
         self
     }
 
-    pub fn texture_pack_path(mut self, value: String) -> Self {
+    pub fn texture_pack_path(mut self, value: PathBuf) -> Self {
         match self.spec.repo.supports_textures {
             true => {
                 self.spec.texture_pack_path = Some(value);
@@ -122,34 +129,60 @@ pub struct Smbuilder<M: MakeoptsType> {
     base_dir: PathBuf,
 }
 
-impl<M: MakeoptsType> Smbuilder<M> {
+impl<M> Smbuilder<M>
+where
+    M: MakeoptsType + serde::Serialize
+{
     pub fn builder() -> SmbuilderBuilder<M> {
         SmbuilderBuilder::new()
     } 
 
-    pub fn setup(spec: BuildSpec<M>) -> Smbuilder<M> {
+    pub fn new(spec: BuildSpec<M>) -> Smbuilder<M> {
         // set up the base directory for easy access later
-        let base_dir = Path::new(std::env!("HOME")).join(".local/share/smbuilder");
+        let base_dir = Path::new(std::env!("HOME"))
+                                    .join(".local/share/smbuilder")
+                                    .join(&spec.name);
 
         // create the build directory
-        std::fs::create_dir(&base_dir.join(&spec.name)).unwrap();
+        fs::create_dir(&base_dir.join(&spec.name)).unwrap();
 
         Smbuilder {
-            spec: spec,
+            spec,
             current_cmd_stdout: vec![],
             make_cmd: String::from("make"),
-            base_dir: base_dir,
+            base_dir,
         }
     }
 
-    pub fn build(&mut self) {
-        // clone the repository
-        
-        git2::Repository::clone( // TODO: clone with branch and depth (possibly)
-            &self.spec.repo.url,
-            &self.base_dir).unwrap();
-        
+    pub fn setup_build(&mut self) {
+        // create the smbuilder.toml
+        fs::File::create(&self.base_dir.join("smbuilder.toml"))
+            .unwrap()
+            .write_all(
+                toml::to_string(&self.spec)
+                    .unwrap()
+                    .as_bytes()
+            ).unwrap();
+
+        // Create the repo dir
+        let repo_dir = &self.base_dir.join(&self.spec.repo.name);
+
+        git2::build::RepoBuilder::new()
+            .branch(&self.spec.repo.branch)
+            .clone(
+                &self.spec.repo.url,
+                &repo_dir)
+            .unwrap();
+
         // copy over the baserom
-        fs::copy((),()) // TODO: make this valid
+        fs::copy(&self.spec.rom.path, &repo_dir).unwrap();
+
+        // begin compiling (!!)
+        /*
+        let make_cmd = if let Some(textures_path) = &self.spec.texture_pack_path {
+            Command::new("cd")
+        } else {
+
+        } */
     }
 }

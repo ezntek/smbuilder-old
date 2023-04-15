@@ -20,7 +20,7 @@ use crate::makeopts::MakeoptsType;
 
 #[cfg(test)]
 mod tests {
-    use crate::{makeopts::Render96exMakeopts, prelude::{DynOSPack, TomlSpec}};
+    use crate::{makeopts::Render96exMakeopts, prelude::TomlSpec};
 
     #[test]
     fn test_de_spec() {
@@ -143,7 +143,7 @@ pub struct DynOSPack {
 // * DynOS data packs (also think Render96, but other ports like sm64ex-coop supports them too)
 //
 
-#[derive(serde_derive::Deserialize, serde_derive::Serialize, Debug)]
+#[derive(serde_derive::Serialize, serde_derive::Deserialize, Debug)]
 pub struct BuildSpec<M: MakeoptsType> {
     // The number of jobs to be put together with the MAKEOPTS during the compile stage.
     pub jobs: u8,
@@ -154,7 +154,7 @@ pub struct BuildSpec<M: MakeoptsType> {
     // The executable path. Not playable if empty, playable if not empty.
     pub executable_path: Option<String>,
     // A custom texture pack (There can only be one!)
-    pub texture_pack_path: Option<String>,
+    pub texture_pack_path: Option<PathBuf>,
     // The repo struct
     pub repo: Repo,
     // The rom struct
@@ -165,7 +165,8 @@ pub struct BuildSpec<M: MakeoptsType> {
 
 impl<M> BuildSpec<M>
 where
-    M: MakeoptsType + for<'a> serde::Deserialize<'a>
+    M: MakeoptsType
+        + for<'a> serde::Deserialize<'a>
 {
     pub fn from_file<P: AsRef<Path>>(path: P) -> BuildSpec<M>{
         let toml_str = fs::read_to_string(path).unwrap();

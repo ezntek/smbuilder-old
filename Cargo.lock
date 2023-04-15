@@ -224,12 +224,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "shutil"
+version = "0.1.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "726c1f160d565e9cef6ecaf0305c86fb254a9c6db6cb29379680b0213aa3a7e1"
+
+[[package]]
 name = "smbuilder"
 version = "0.1.0"
 dependencies = [
  "git2",
  "serde",
  "serde_derive",
+ "shutil",
  "toml",
 ]
 
