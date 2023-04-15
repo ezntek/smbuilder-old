@@ -67,6 +67,11 @@ mod tests {
         spec.dynos_packs = s.dynos_packs;
         println!("{:?}",spec);
     }
+
+    #[test]
+    fn test_get_string_makeopts() {
+        
+    }
 }
 
 fn get_dummy_base_path() -> PathBuf {
@@ -167,6 +172,7 @@ impl<M> BuildSpec<M>
 where
     M: MakeoptsType
         + for<'a> serde::Deserialize<'a>
+        + serde::Serialize
 {
     pub fn from_file<P: AsRef<Path>>(path: P) -> BuildSpec<M>{
         let toml_str = fs::read_to_string(path).unwrap();
@@ -174,6 +180,40 @@ where
         let mut spec = s.build_settings;
         spec.dynos_packs = s.dynos_packs;
         spec
+    }
+
+    pub fn get_stringified_makeopts(&self, string_makeopts: Option<String>) -> String {
+        // dirty hacks to get the string names of the enums
+        #[derive(serde_derive::Deserialize)]
+        struct Makeopt {
+            opt: String,
+            arg: Option<String>,
+        }
+
+        #[derive(serde_derive::Serialize)]
+        struct DummyStruct<M> {
+            makeopts: Vec<M>,
+        }
+
+        // initialize the string
+        let mut retval = String::new();
+
+        let temp_string = toml::to_string(
+            &DummyStruct {
+                makeopts: &self.additional_makeopts
+            }).unwrap();
+        
+        let vec_makeopts: Vec<Makeopt> = toml::from_str(&temp_string).unwrap();
+        
+        for makeopt in vec_makeopts {
+            if let Some(arg) = makeopt.arg {
+                retval.push_str(&format!("{}={}", makeopt.opt, arg))
+            } else {
+                retval.push_str(&format!("{}=1", makeopt.opt))
+            }
+        };
+
+        retval
     }
 }
 

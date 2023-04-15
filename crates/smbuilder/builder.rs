@@ -17,12 +17,25 @@ use crate::{prelude::*, makeopts};
 
 #[cfg(test)]
 mod tests{
+    use std::process::{self, Command};
+
+    use execute::Execute;
+
     #[test]
     fn wee() {
-        std::process::Command::new("cd").arg("../").spawn().unwrap();
-        let pwdout = String::from_utf8(std::process::Command::new("pwd").output().unwrap().stdout).unwrap();
-        println!("{}",pwdout);
+        let mut cmd1 = Command::new("cd");
+        cmd1.arg("../../");
+        let mut cmd2 = Command::new("pwd");
+        let output = cmd1.execute_multiple_output(&mut [&mut cmd2]).unwrap();
+        println!("{}", String::from_utf8(output.stdout).unwrap());
     }
+}
+
+pub fn generate_build_script<M>(repo_dirname: String, smbuilder_toml_path: PathBuf, string_makeopts: Option<String>) -> String
+where
+    M: MakeoptsType
+{
+   
 }
 
 pub struct SmbuilderBuilder<M: MakeoptsType> {
@@ -163,6 +176,7 @@ where
                     .unwrap()
                     .as_bytes()
             ).unwrap();
+        
 
         // Create the repo dir
         let repo_dir = &self.base_dir.join(&self.spec.repo.name);
@@ -177,12 +191,7 @@ where
         // copy over the baserom
         fs::copy(&self.spec.rom.path, &repo_dir).unwrap();
 
-        // begin compiling (!!)
-        /*
-        let make_cmd = if let Some(textures_path) = &self.spec.texture_pack_path {
-            Command::new("cd")
-        } else {
+        // create the build script
 
-        } */
     }
 }
