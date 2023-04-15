@@ -17,7 +17,7 @@ use crate::{prelude::*, makeopts};
 
 #[cfg(test)]
 mod tests{
-    use std::process::{self, Command};
+    use std::process::{Command};
 
     use execute::Execute;
 
@@ -29,13 +29,6 @@ mod tests{
         let output = cmd1.execute_multiple_output(&mut [&mut cmd2]).unwrap();
         println!("{}", String::from_utf8(output.stdout).unwrap());
     }
-}
-
-pub fn generate_build_script<M>(repo_dirname: String, smbuilder_toml_path: PathBuf, string_makeopts: Option<String>) -> String
-where
-    M: MakeoptsType
-{
-   
 }
 
 pub struct SmbuilderBuilder<M: MakeoptsType> {
@@ -52,7 +45,7 @@ impl<M: MakeoptsType> SmbuilderBuilder<M> {
                 additional_makeopts: Vec::new(),
                 executable_path: None,
                 texture_pack_path: None,
-                dynos_packs: Vec::new(),
+                dynos_packs: Some(Vec::new()),
                 repo: default_repo,
                 rom: Rom::default(),
             }
@@ -95,9 +88,13 @@ impl<M: MakeoptsType> SmbuilderBuilder<M> {
     }
 
     pub fn add_dynos_pack(mut self, pack: DynOSPack) -> Self {
-        match self.spec.repo.supports_packs {
+        match &self.spec.repo.supports_packs {
             true => {
-                self.spec.dynos_packs.push(pack);
+                if let Some(ref mut existing_packs) = &mut self.spec.dynos_packs {
+                    existing_packs.push(pack);
+                } else {
+                    self.spec.dynos_packs = Some(vec![pack]);
+                }
                 self
             },
             false => self
@@ -105,9 +102,13 @@ impl<M: MakeoptsType> SmbuilderBuilder<M> {
     }
 
     pub fn append_dynos_packs(mut self, mut packs: Vec<DynOSPack>) -> Self {
-        match self.spec.repo.supports_packs {
+        match &self.spec.repo.supports_packs {
             true => {
-                self.spec.dynos_packs.append(&mut packs);
+                if let Some(ref mut existing_packs) = &mut self.spec.dynos_packs {
+                    existing_packs.append(&mut packs);
+                } else {
+                    self.spec.dynos_packs = Some(packs);
+                }
                 self
             },
             false => self
@@ -117,7 +118,7 @@ impl<M: MakeoptsType> SmbuilderBuilder<M> {
     pub fn set_dynos_packs(mut self, packs: Vec<DynOSPack>) -> Self {
         match self.spec.repo.supports_packs {
             true => {
-                self.spec.dynos_packs = packs;
+                self.spec.dynos_packs = Some(packs);
                 self
             },
             false => self

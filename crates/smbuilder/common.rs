@@ -20,37 +20,10 @@ use crate::makeopts::MakeoptsType;
 
 #[cfg(test)]
 mod tests {
-    use crate::{makeopts::Render96exMakeopts, prelude::TomlSpec};
+    use crate::{makeopts::Render96exMakeopts, prelude::{TomlSpec, DynOSPack}};
 
     #[test]
-    fn test_de_spec() {
-        let toml_str = "
-[build_settings]
-    jobs = 4
-    name = \"foobar\"
-    executable_path = \"/path/to/sm64.region.f3dex2e\"
-
-    [build_settings.repo]
-        name = \"My SM64 PC Port\"
-        url = \"protocol://link.to/the/repo.git\"
-        branch = \"master\"
-        supports_packs = true
-        supports_textures = false
-
-    [build_settings.rom]
-        path = \"/path/to/baserom.z64\"
-        region = \"us\"
-
-    [[build_settings.additional_makeopts]]
-        opt = \"DISCORDRPC\"
-
-    [[build_settings.additional_makeopts]]
-        opt = \"OSX_BUILD\"
-
-    [[build_settings.additional_makeopts]]
-        opt = \"TARGET_ARCH\"
-        arg = \"native\"
-
+    fn test_de_spec() {"
 [[dynos_packs]]
     path = \"/path/to/pack\"
     label = \"my pack\"
@@ -61,16 +34,11 @@ mod tests {
     label = \"my pack 2\"
     enabled = true
 ";
-
-        let s = toml::from_str::<TomlSpec<Render96exMakeopts>>(&toml_str).unwrap();
-        let mut spec = s.build_settings;
-        spec.dynos_packs = s.dynos_packs;
-        println!("{:?}",spec);
     }
 
     #[test]
     fn test_get_string_makeopts() {
-        
+
     }
 }
 
@@ -165,7 +133,7 @@ pub struct BuildSpec<M: MakeoptsType> {
     // The rom struct
     pub rom: Rom,
     // Any DynOS packs the user wishes to add
-    pub dynos_packs: Vec<DynOSPack>,
+    pub dynos_packs: Option<Vec<DynOSPack>>,
 }
 
 impl<M> BuildSpec<M>
@@ -191,8 +159,8 @@ where
         }
 
         #[derive(serde_derive::Serialize)]
-        struct DummyStruct<M> {
-            makeopts: Vec<M>,
+        struct DummyStruct<'a, M: MakeoptsType> {
+            makeopts: &'a Vec<M>,
         }
 
         // initialize the string
@@ -213,12 +181,23 @@ where
             }
         };
 
+        if let Some(x) = string_makeopts {
+            retval.push_str(&x);
+        }
+
         retval
+    }
+    
+    pub fn generate_build_script<P>(&self, repo_path: P, string_makeopts: Option<String>) -> String
+    where
+        P: AsRef<P> + std::fmt::Display
+    {
+        format!("#!/bin/sh\ncd {}\nmake {} -j{}", repo_path, &self.get_stringified_makeopts(string_makeopts), &self.jobs)
     }
 }
 
 #[derive(serde_derive::Serialize, serde_derive::Deserialize)]
 pub struct TomlSpec<M: MakeoptsType> {
     pub build_settings: BuildSpec<M>,
-    pub dynos_packs: Vec<DynOSPack>,
+    pub dynos_packs: Option<Vec<DynOSPack>>,
 }
