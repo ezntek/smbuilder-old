@@ -12,8 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use std::{path::{Path,PathBuf}, fs, io::Write, process::Command};
-use crate::{prelude::*, makeopts};
+use std::{path::{Path,PathBuf}, fs, io::{Write, BufReader}, process::{Stdio, ChildStdout, Command}};
+use std::os::unix::fs::PermissionsExt;
+use crate::prelude::*;
 
 #[cfg(test)]
 mod tests{
@@ -136,22 +137,23 @@ impl<M: MakeoptsType> SmbuilderBuilder<M> {
     }
 }
 
-pub struct Smbuilder<M: MakeoptsType> {
+pub struct Smbuilder<'a, M: MakeoptsType> {
     spec: BuildSpec<M>,
-    current_cmd_stdout: Vec<String>, // supposed to be output of a BufReader object .lines() call (so lines from the stdout), too lazy to find type for now
-    make_cmd: String, // the actual command
+    build_cmd_buf_reader: Option<&'a BufReader<&'a mut ChildStdout>>,
     base_dir: PathBuf,
 }
 
-impl<M> Smbuilder<M>
+impl<'a, M> Smbuilder<'a, M>
 where
-    M: MakeoptsType + serde::Serialize
+    M: MakeoptsType
+        + serde::Serialize
+        + for<'de> serde::Deserialize<'de>
 {
     pub fn builder() -> SmbuilderBuilder<M> {
         SmbuilderBuilder::new()
     } 
 
-    pub fn new(spec: BuildSpec<M>) -> Smbuilder<M> {
+    pub fn new(spec: BuildSpec<M>) -> Smbuilder<'static, M> {
         // set up the base directory for easy access later
         let base_dir = Path::new(std::env!("HOME"))
                                     .join(".local/share/smbuilder")
@@ -162,9 +164,8 @@ where
 
         Smbuilder {
             spec,
-            current_cmd_stdout: vec![],
-            make_cmd: String::from("make"),
             base_dir,
+            build_cmd_buf_reader: None,
         }
     }
 
@@ -193,6 +194,35 @@ where
         fs::copy(&self.spec.rom.path, &repo_dir).unwrap();
 
         // create the build script
+        let build_script_string = &self.spec.get_stringified_makeopts(None);
+        fs::File::create(&self.base_dir.join("build.sh"))
+            .unwrap()
+            .write_all(
+                build_script_string.as_bytes()
+            ).unwrap();
+        
+        // set the script as executable
+        let current_file_perm = fs::metadata(&self.base_dir.join("build.sh"))
+            .unwrap()
+            .permissions();
 
+        fs::set_permissions(
+            &self.base_dir.join("build.sh"),
+            fs::Permissions::from_mode(
+                current_file_perm.mode()+0o111 // this is a hacky looking version of a chmod +x,
+                                               // getting the current mode and adding 0o111 is what chmod +x does.
+            )).unwrap();
+    }
+
+    pub fn build(&mut self) {
+        // run the build script
+        let mut build_cmd = Command::new(&self.base_dir.join("build.sh"))
+                                    .stdout(Stdio::piped())
+                                    .spawn()
+                                    .unwrap();
+        
+        let bfr = BufReader::new(&mut build_cmd.stdout.unwrap());
+        self.build_cmd_buf_reader = Some(&bfr);
+        build_cmd.wait().unwrap();
     }
 }

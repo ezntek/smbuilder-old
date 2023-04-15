@@ -22,6 +22,8 @@ use crate::makeopts::MakeoptsType;
 mod tests {
     use crate::{makeopts::Render96exMakeopts, prelude::{TomlSpec, DynOSPack}};
 
+    use super::BuildSpec;
+
     #[test]
     fn test_de_spec() {"
 [[dynos_packs]]
@@ -38,7 +40,6 @@ mod tests {
 
     #[test]
     fn test_get_string_makeopts() {
-
     }
 }
 
