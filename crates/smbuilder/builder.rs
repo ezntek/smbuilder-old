@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use std::{path::{Path,PathBuf}, fs, io::{Write, BufReader}, process::{Stdio, ChildStdout, Command}};
+use std::{path::{Path,PathBuf}, fs, io::{Write, BufReader}, process::{Stdio, ChildStdout, Command}, rc::Rc, cell::RefCell};
 use std::os::unix::fs::PermissionsExt;
 use crate::prelude::*;
 
@@ -137,13 +137,13 @@ impl<M: MakeoptsType> SmbuilderBuilder<M> {
     }
 }
 
-pub struct Smbuilder<'a, M: MakeoptsType> {
+pub struct Smbuilder<M: MakeoptsType> {
     spec: BuildSpec<M>,
-    build_cmd_buf_reader: Option<&'a BufReader<&'a mut ChildStdout>>,
+    build_cmd_buf_reader: Option<BufReader<ChildStdout>>,
     base_dir: PathBuf,
 }
 
-impl<'a, M> Smbuilder<'a, M>
+impl<M> Smbuilder<M>
 where
     M: MakeoptsType
         + serde::Serialize
@@ -153,7 +153,7 @@ where
         SmbuilderBuilder::new()
     } 
 
-    pub fn new(spec: BuildSpec<M>) -> Smbuilder<'static, M> {
+    pub fn new(spec: BuildSpec<M>) -> Smbuilder<M> {
         // set up the base directory for easy access later
         let base_dir = Path::new(std::env!("HOME"))
                                     .join(".local/share/smbuilder")
@@ -216,13 +216,15 @@ where
 
     pub fn build(&mut self) {
         // run the build script
-        let mut build_cmd = Command::new(&self.base_dir.join("build.sh"))
-                                    .stdout(Stdio::piped())
-                                    .spawn()
-                                    .unwrap();
+    
+        let mut build_cmd = Rc::new(RefCell::new(Command::new(&self.base_dir.join("build.sh"))
+                                                    .stdout(Stdio::piped())
+                                                    .spawn()
+                                                    .unwrap()));
         
-        let bfr = BufReader::new(&mut build_cmd.stdout.unwrap());
-        self.build_cmd_buf_reader = Some(&bfr);
-        build_cmd.wait().unwrap();
+        let build_cmd_stdout = &build_cmd.borrow().stdout;
+        self.build_cmd_buf_reader = Some(BufReader::new(build_cmd_stdout.as_ref().unwrap()));
+        
+        build_cmd.borrow_mut().wait().unwrap();
     }
 }
