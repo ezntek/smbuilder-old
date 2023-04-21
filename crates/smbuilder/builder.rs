@@ -12,19 +12,30 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use std::{path::{Path,PathBuf}, fs, io::{Write, BufReader, BufRead}, process::{Stdio, Command}};
+use std::{path::{Path,PathBuf}, fs, io::{Write, BufReader, BufRead}, process::{Stdio, Command}, error::Error};
 use std::os::unix::fs::PermissionsExt;
 use crate::prelude::*;
 
 #[cfg(test)]
-mod tests {}
+mod tests {
+
+    #[test]
+    fn test() {
+        
+    }
+}
 
 pub struct SmbuilderBuilder<M: MakeoptsType> {
     spec: BuildSpec<M>,
 }
 
-impl<M: MakeoptsType> SmbuilderBuilder<M> {
-    pub fn new() -> SmbuilderBuilder<M> {
+impl<M> SmbuilderBuilder<M>
+where
+    M: MakeoptsType
+        + serde::Serialize
+        + for<'a> serde::Deserialize<'a>
+{
+    fn new() -> SmbuilderBuilder<M> {
         let default_repo = Repo::default();
         SmbuilderBuilder { 
             spec: BuildSpec {
@@ -122,6 +133,13 @@ impl<M: MakeoptsType> SmbuilderBuilder<M> {
         self.spec.rom = value;
         self
     }
+
+    pub fn build(self) -> Result<Smbuilder<M>, &'static str> {
+        match &self.spec.rom == &Rom::default() {
+            true => Err("You must supply a baserom in order to compile the project! Please go back and supply a Rom."),
+            false => Ok(Smbuilder::new(self.spec)),
+        }
+    }
 }
 
 pub struct Smbuilder<M: MakeoptsType> {
@@ -139,7 +157,7 @@ where
         SmbuilderBuilder::new()
     } 
 
-    pub fn new(spec: BuildSpec<M>) -> Smbuilder<M> {
+    fn new(spec: BuildSpec<M>) -> Smbuilder<M> {
         // set up the base directory for easy access later
         let base_dir = Path::new(std::env!("HOME"))
                                     .join(".local/share/smbuilder")

@@ -31,7 +31,7 @@ pub enum Versions {
     Sm64exCoop,
 }
 
-#[derive(serde_derive::Deserialize, serde_derive::Serialize, Debug)]
+#[derive(serde_derive::Deserialize, serde_derive::Serialize, Debug, PartialEq, Eq)]
 #[serde(rename_all = "lowercase")]
 pub enum Region {
     US,
@@ -41,7 +41,7 @@ pub enum Region {
 }
 
 
-#[derive(serde_derive::Deserialize, serde_derive::Serialize, Debug)]
+#[derive(serde_derive::Deserialize, serde_derive::Serialize, Debug, PartialEq, Eq)]
 pub struct Rom {
     pub region: Region,
     pub path: PathBuf,
@@ -94,7 +94,6 @@ pub struct DynOSPack {
 // * A custom texture pack (think Render96)
 // * DynOS data packs (also think Render96, but other ports like sm64ex-coop supports them too)
 //
-
 #[derive(serde_derive::Serialize, serde_derive::Deserialize, Debug)]
 pub struct BuildSpec<M: MakeoptsType> {
     // The number of jobs to be put together with the MAKEOPTS during the compile stage.
