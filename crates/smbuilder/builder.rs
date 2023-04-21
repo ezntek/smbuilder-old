@@ -12,25 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use std::{path::{Path,PathBuf}, fs, io::{Write, BufReader, BufRead}, process::{Stdio, ChildStdout, Command, Child}, rc::Rc, cell::RefCell, thread};
+use std::{path::{Path,PathBuf}, fs, io::{Write, BufReader, BufRead}, process::{Stdio, Command}};
 use std::os::unix::fs::PermissionsExt;
 use crate::prelude::*;
 
 #[cfg(test)]
-mod tests{
-    use std::process::{Command};
-
-    use execute::Execute;
-
-    #[test]
-    fn wee() {
-        let mut cmd1 = Command::new("cd");
-        cmd1.arg("../../");
-        let mut cmd2 = Command::new("pwd");
-        let output = cmd1.execute_multiple_output(&mut [&mut cmd2]).unwrap();
-        println!("{}", String::from_utf8(output.stdout).unwrap());
-    }
-}
+mod tests {}
 
 pub struct SmbuilderBuilder<M: MakeoptsType> {
     spec: BuildSpec<M>,

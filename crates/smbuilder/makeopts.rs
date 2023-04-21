@@ -12,43 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use serde::de::DeserializeOwned;
 use serde_derive;
 
 #[cfg(test)]
-mod tests {
-    #[test]
-    fn test() {
-        use crate::makeopts::*;
-
-        #[derive(Debug, PartialEq, Eq, serde_derive::Serialize, serde_derive::Deserialize)]
-        struct MyStruct {
-            test: Render96exMakeopts,
-        }
-
-        #[derive(Debug, PartialEq, Eq, serde_derive::Serialize, serde_derive::Deserialize)]
-        struct MyStruct2 {
-            test: MyStruct2Inner
-        }
-
-        #[derive(Debug, PartialEq, Eq, serde_derive::Serialize, serde_derive::Deserialize)]
-        struct MyStruct2Inner {
-            opt: String,
-            arg: Option<String>,
-        }
-
-        let x = MyStruct {
-            test: Render96exMakeopts::TargetWeb,
-        };
-
-        let x_de = toml::to_string(&x).unwrap();
-        println!("{}", x_de);
-
-        let y: MyStruct2 = toml::from_str(&x_de).unwrap();
-        println!("{:?}", y);
-        
-    }
-}
+mod tests {}
 
 #[derive(Debug, PartialEq, Eq, serde_derive::Deserialize, serde_derive::Serialize)]
 #[serde(rename_all = "UPPERCASE")]

@@ -19,29 +19,7 @@ use std::path::{PathBuf, Path};
 use crate::makeopts::MakeoptsType;
 
 #[cfg(test)]
-mod tests {
-    use crate::{makeopts::Render96exMakeopts, prelude::{TomlSpec, DynOSPack}};
-
-    use super::BuildSpec;
-
-    #[test]
-    fn test_de_spec() {"
-[[dynos_packs]]
-    path = \"/path/to/pack\"
-    label = \"my pack\"
-    enabled = false
-
-[[dynos_packs]]
-    path = \"/path/to/pack\"
-    label = \"my pack 2\"
-    enabled = true
-";
-    }
-
-    #[test]
-    fn test_get_string_makeopts() {
-    }
-}
+mod tests {}
 
 fn get_dummy_base_path() -> PathBuf {
     Path::new(std::env!("HOME")).join(".local/share/smbuilder")
