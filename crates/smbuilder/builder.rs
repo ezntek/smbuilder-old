@@ -17,13 +17,7 @@ use std::os::unix::fs::PermissionsExt;
 use crate::prelude::*;
 
 #[cfg(test)]
-mod tests {
-
-    #[test]
-    fn test() {
-        
-    }
-}
+mod tests {}
 
 pub struct SmbuilderBuilder<M: MakeoptsType> {
     spec: BuildSpec<M>,

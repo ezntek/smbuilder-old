@@ -193,7 +193,6 @@ pub enum Sm64exCoopMakeopts {
     ModernRendering,
     WindowsBuild,
 }
-
 pub trait MakeoptsType {
     fn get_defaults() -> Vec<Self> where
         Self: Sized;
