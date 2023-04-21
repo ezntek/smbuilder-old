@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use std::{path::{Path,PathBuf}, fs, io::{Write, BufReader, BufRead}, process::{Stdio, Command}, error::Error};
+use std::{path::{Path,PathBuf}, sync::{Arc, Mutex}, fs, io::{Write, BufReader, BufRead}, process::{Stdio, Command, ChildStdout}, error::Error, thread};
 use std::os::unix::fs::PermissionsExt;
 use crate::prelude::*;
 
@@ -145,7 +145,7 @@ impl<M> Smbuilder<M>
 where
     M: MakeoptsType
         + serde::Serialize
-        + for<'de> serde::Deserialize<'de>
+        + for<'a> serde::Deserialize<'a>
 {
     pub fn builder() -> SmbuilderBuilder<M> {
         SmbuilderBuilder::new()
@@ -159,7 +159,7 @@ where
 
         // create the build directory
         fs::create_dir(&base_dir.join(&spec.name)).unwrap();
-
+        
         Smbuilder {
             spec,
             base_dir,
@@ -211,21 +211,54 @@ where
             )).unwrap();
     }
 
-    pub fn build(&mut self) {
-        // run the build script
+    pub fn build<S>(&mut self, cmdout_prefix: S)
+    where
+        S: AsRef<str> + std::fmt::Display        
+    {
+        // set things up
         let mut build_cmd = Command::new(&self.base_dir.join("build.sh"));
         
         let child = &mut build_cmd
                                 .stdout(Stdio::piped())
-                                .spawn()
+                                .spawn() // spawn the command
                                 .unwrap();
         
-        let reader = BufReader::new(child.stdout.take().unwrap());
+        let reader = BufReader::new(child.stdout.take().unwrap()); // pipe the stdout of the command into a BufReader
 
         for line in reader.lines() {
-            println!("{}", line.unwrap());
+            println!("{}{}", cmdout_prefix, line.unwrap()); // print the stdout out from the bufreader (with an optional prefix)
         }
 
-        child.wait().unwrap();
+        child.wait().unwrap(); // wait for it to finnish
+    }
+}
+
+pub struct ThreadedSmbuilder<M: MakeoptsType> {
+    smbuilder: Arc<Smbuilder<M>>,
+    cmd_stdout: Mutex<ChildStdout>,
+    
+}
+
+impl<M> ThreadedSmbuilder<M>
+where
+    M: MakeoptsType
+        + serde::Serialize
+        + for<'a> serde::Deserialize<'a>
+{
+    pub fn threaded_build(&mut self) {
+        // set things up
+        let smbuilder_self = self.smbuilder.clone();
+        let mut build_cmd = Command::new(&smbuilder_self.base_dir.join("build.sh"));
+        
+        // the magic happens here
+        thread::spawn(move || {
+            let mut child = build_cmd
+                .stdout(Stdio::piped())
+                .spawn() // spawn the command
+                .unwrap();
+            
+            let stdout = child.stdout.take().unwrap();
+            
+        });
     }
 }

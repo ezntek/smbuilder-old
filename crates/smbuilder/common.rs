@@ -84,16 +84,16 @@ pub struct DynOSPack {
     pub path: PathBuf,
 }
 
-// The Build Specification Structure. Contains all the metadata required to run the Smbuilder class and the SmbuilderBuilder class, etc.
+/// The Build Specification Structure. Contains all the metadata required to run the Smbuilder class and the SmbuilderBuilder class, etc.
+///
+/// Supports:
 //
-// Supports:
-//
-// * Jobs (jobs = [make] -jX)
-// * Name (A custom name can be used, else it is repo.name)
-// * Additional Make Options (eg. FOO=1 BAR=baz QUUX=0, make  FOO=1 BAR=baz QUUX=0 -jX)
-// * A custom texture pack (think Render96)
-// * DynOS data packs (also think Render96, but other ports like sm64ex-coop supports them too)
-//
+/// * Jobs (jobs = [make] -jX)
+/// * Name (A custom name can be used, else it is repo.name)
+/// * Additional Make Options (eg. FOO=1 BAR=baz QUUX=0, make  FOO=1 BAR=baz QUUX=0 -jX)
+/// * A custom texture pack (think Render96)
+/// * DynOS data packs (also think Render96, but other ports like sm64ex-coop supports them too)
+///
 #[derive(serde_derive::Serialize, serde_derive::Deserialize, Debug)]
 pub struct BuildSpec<M: MakeoptsType> {
     // The number of jobs to be put together with the MAKEOPTS during the compile stage.
@@ -178,4 +178,49 @@ where
 pub struct TomlSpec<M: MakeoptsType> {
     pub build_settings: BuildSpec<M>,
     pub dynos_packs: Option<Vec<DynOSPack>>,
+}
+
+impl<M> Into<BuildSpec<M>> for TomlSpec<M>
+where
+    M: MakeoptsType
+        + serde::Serialize
+        + for<'a> serde::Deserialize<'a>
+{
+    fn into(self) -> BuildSpec<M> {
+        let spec = self.build_settings; // Make an easier to type shortcut because I'm lazy lol
+
+        BuildSpec {
+            jobs: spec.jobs,
+            name: spec.name,
+            additional_makeopts: spec.additional_makeopts,
+            executable_path: spec.executable_path,
+            texture_pack_path: spec.texture_pack_path,
+            repo: spec.repo,
+            rom: spec.rom,
+            dynos_packs: self.dynos_packs
+        }
+    }
+}
+
+impl<M> From<BuildSpec<M>> for TomlSpec<M>
+where
+    M: MakeoptsType
+        + serde::Serialize
+        + for<'a> serde::Deserialize<'a>
+{
+    fn from(value: BuildSpec<M>) -> Self {
+        TomlSpec {
+            dynos_packs: value.dynos_packs,
+            build_settings: BuildSpec { // XXX: psst! This is to avoid implementing the copy trait on DynOSPack, because it makes use of a string type.
+                jobs: value.jobs,
+                name: value.name,
+                additional_makeopts: value.additional_makeopts,
+                executable_path: value.executable_path,
+                texture_pack_path: value.texture_pack_path,
+                repo: value.repo,
+                rom: value.rom,
+                dynos_packs: None,
+            },
+        }
+    }
 }

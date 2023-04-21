@@ -19,13 +19,14 @@ pub mod makeopts;
 use std::path::Path;
 
 pub fn init() {
-    // Set the home dir for easy access
+    // Set some dirs for readability
     let home_dir = std::env!("HOME");
+    let smbuilder_data_dir = Path::new(&home_dir).join(".local/share/smbuilder");
+    let smbuilder_config_dir = Path::new(&home_dir).join(".local/share/smbuilder");
 
-    // Create ~/.local/share/smbuilder
-    std::fs::create_dir(Path::new(&home_dir).join(".local/share/smbuilder"))
-        .expect(format!("Failed to create {}/.local/share/smbuilder! Perhaps the directory already exists?", home_dir)
-        .as_str());
-
-    // Create a repos.toml file
+    // Create the directories
+    for dir in vec![smbuilder_data_dir, smbuilder_config_dir].iter() {
+        std::fs::create_dir(&dir)
+            .expect(format!("Failed to create {}! Perhaps the directory already exists?", dir.display()).as_str());        
+    }
 }
