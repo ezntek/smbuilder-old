@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use std::{path::{Path,PathBuf}, fs, io::{Write, BufReader}, process::{Stdio, ChildStdout, Command, Child}, rc::Rc, cell::RefCell, thread};
+use std::{path::{Path,PathBuf}, fs, io::{Write, BufReader, BufRead}, process::{Stdio, ChildStdout, Command, Child}, rc::Rc, cell::RefCell, thread};
 use std::os::unix::fs::PermissionsExt;
 use crate::prelude::*;
 
@@ -139,7 +139,6 @@ impl<M: MakeoptsType> SmbuilderBuilder<M> {
 
 pub struct Smbuilder<M: MakeoptsType> {
     spec: BuildSpec<M>,
-    cmd_stdout: Option<ChildStdout>,
     base_dir: PathBuf,
 }
 
@@ -165,7 +164,6 @@ where
         Smbuilder {
             spec,
             base_dir,
-            cmd_stdout: None,
         }
     }
 
@@ -217,19 +215,18 @@ where
     pub fn build(&mut self) {
         // run the build script
         let mut build_cmd = Command::new(&self.base_dir.join("build.sh"));
-
-        //let build_cmd_stdout = &build_cmd.borrow().stdout;
-        //self.build_cmd_buf_reader = Some(BufReader::new(build_cmd_stdout.as_ref().unwrap()));
-        //build_cmd.borrow_mut().wait().unwrap();
         
-        let thread = thread::spawn(move || {
-            let mut child = build_cmd
-                                    .stdout(Stdio::piped())
-                                    .spawn()
-                                    .unwrap();
+        let child = &mut build_cmd
+                                .stdout(Stdio::piped())
+                                .spawn()
+                                .unwrap();
+        
+        let reader = BufReader::new(child.stdout.take().unwrap());
 
-            let stdout = child.stdout.take().unwrap();
-            self.cmd_stdout = Some(stdout);
-        });
+        for line in reader.lines() {
+            println!("{}", line.unwrap());
+        }
+
+        child.wait().unwrap();
     }
 }
