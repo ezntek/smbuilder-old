@@ -139,6 +139,7 @@ where
 pub struct Smbuilder<M: MakeoptsType> {
     spec: BuildSpec<M>,
     base_dir: PathBuf,
+    cmd_stdout: Option<Mutex<ChildStdout>>,
 }
 
 impl<M> Smbuilder<M>
@@ -163,6 +164,7 @@ where
         Smbuilder {
             spec,
             base_dir,
+            cmd_stdout: None,
         }
     }
 
@@ -211,7 +213,7 @@ where
             )).unwrap();
     }
 
-    pub fn build<S>(&mut self, cmdout_prefix: S)
+    pub fn build<S>(&self, cmdout_prefix: S)
     where
         S: AsRef<str> + std::fmt::Display        
     {
@@ -219,9 +221,9 @@ where
         let mut build_cmd = Command::new(&self.base_dir.join("build.sh"));
         
         let child = &mut build_cmd
-                                .stdout(Stdio::piped())
-                                .spawn() // spawn the command
-                                .unwrap();
+                                    .stdout(Stdio::piped())
+                                    .spawn() // spawn the command
+                                    .unwrap();
         
         let reader = BufReader::new(child.stdout.take().unwrap()); // pipe the stdout of the command into a BufReader
 
@@ -231,12 +233,25 @@ where
 
         child.wait().unwrap(); // wait for it to finnish
     }
+
+    pub fn build_silent(&mut self) {
+        // set things up
+        let mut build_cmd = Command::new(&self.base_dir.join("build.sh"));
+        
+        let child = &mut build_cmd
+                                    .stdout(Stdio::piped())
+                                    .spawn() // spawn the command
+                                    .unwrap();
+
+        eprintln!("Using the Blocking Builder to build... The process/app will freeze.");
+        self.cmd_stdout = Some(Mutex::new(child.stdout.take().unwrap())); // save the stdout to the struct (the function will only write to the stderr)
+        
+        child.wait().unwrap(); // now wait for it to finnish
+    }
 }
 
 pub struct ThreadedSmbuilder<M: MakeoptsType> {
     smbuilder: Arc<Smbuilder<M>>,
-    cmd_stdout: Mutex<ChildStdout>,
-    
 }
 
 impl<M> ThreadedSmbuilder<M>
@@ -250,15 +265,21 @@ where
         let smbuilder_self = self.smbuilder.clone();
         let mut build_cmd = Command::new(&smbuilder_self.base_dir.join("build.sh"));
         
-        // the magic happens here
-        thread::spawn(move || {
-            let mut child = build_cmd
+        let mut child = build_cmd
                 .stdout(Stdio::piped())
                 .spawn() // spawn the command
                 .unwrap();
-            
+        // the magic happens here
+        thread::spawn(|| {
             let stdout = child.stdout.take().unwrap();
             
+            if let Some(cmd_stdout) = smbuilder_self.clone().cmd_stdout {
+                {
+                   cmd_stdout.lock() 
+                }
+            } else {
+                panic!("you are fucking dumbass")
+            };
         });
     }
 }
