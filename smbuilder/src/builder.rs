@@ -253,8 +253,6 @@ impl<'a> Builder<'a> {
 
         let file_path = self.base_dir.join("build.sh");
 
-        run_callback!(self.callbacks.log_cb, Info, "arstarstarst");
-
         let mut build_script =
             fs::File::create(&file_path).expect("failed to create the build script file!");
 
@@ -326,7 +324,9 @@ impl<'a> Builder<'a> {
     }
 
     fn compile(&mut self) {
-        let build_cmd = cmd!(self.base_dir.join("build.sh")).stderr_to_stdout();
+        let build_script_path = self.base_dir.join("build.sh").canonicalize().unwrap();
+        dbg!(&build_script_path);
+        let build_cmd = cmd!(build_script_path).stderr_to_stdout();
         let output = build_cmd
             .reader()
             .unwrap_or_else(|e| panic!("failed to get a reader from the command: {}", e));

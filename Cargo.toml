@@ -2,9 +2,7 @@
 members = [
     "smbuilder",
     "smbuilder-cli",
-    "gtksmbuilder",
 ]
 
 [workspace.dependencies]
 colored = "2.0.0"
-
