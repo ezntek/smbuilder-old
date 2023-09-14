@@ -1,6 +1,7 @@
 use crate::callback_types::LogType;
 use crate::prelude::*;
 use crate::romconvert::determine_format;
+use crate::util;
 use derive_builder::Builder;
 use serde::{Deserialize, Serialize};
 use std::fs;
@@ -142,7 +143,7 @@ impl Spec {
     //  TODO: example
     pub fn to_script(&self, repo_path: &Path) -> String {
         let makeopts_string = if let Some(makeopts) = &self.makeopts {
-            get_makeopts_string(makeopts)
+            util::get_makeopts_string(makeopts)
         } else {
             String::new()
         };
@@ -155,7 +156,7 @@ impl Spec {
         #[cfg(target_os = "linux")]
         let make_cmd = "make";
 
-        let platform_makeopts = get_makeopts_string(&Makeopt::default_makeopts());
+        let platform_makeopts = util::get_makeopts_string(&Makeopt::default_makeopts());
 
         let jobs = self.jobs.unwrap_or(2);
 

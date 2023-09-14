@@ -18,6 +18,5 @@ pub use crate::spec::*;
 pub use crate::types::*;
 
 // other stuff
-pub use crate::{get_makeopts_string, make_file_executable, run_callback};
 pub use errors::SmbuilderError;
 pub use romconvert::*;

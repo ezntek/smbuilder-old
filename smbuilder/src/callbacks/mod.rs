@@ -4,6 +4,26 @@ pub mod types;
 use crate::builder_types::{PostBuildStage, SetupStage};
 use types::*;
 
+/// Run a `Callbacks`
+/// callback, if it exists.
+///
+/// Does not panic if it
+/// does not exist. You
+/// also do need a mutable
+/// reference to the callback,
+/// as there are `FnMut`s.
+///
+// TODO: example
+macro_rules! run_callback {
+    ($callback:expr, $($cb_arg:tt)*) => {
+        if let Some(callback) = &mut $callback {
+            callback($($cb_arg)*);
+        };
+    };
+}
+
+pub(crate) use run_callback;
+
 /// A struct to store callbacks
 /// to hook various events during
 /// the build lifecycle to various

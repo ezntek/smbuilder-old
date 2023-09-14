@@ -3,10 +3,11 @@ use super::types::{
     PostBuildStage::*,
     SetupStage::{self, *},
 };
-use crate::callbacks::types::LogType::{self, *};
-use crate::prelude::{run_callback, Callbacks};
-use crate::SmbuilderError;
-use crate::{make_file_executable, prelude::Spec};
+
+use crate::callback_types::LogType::{self, *};
+use crate::callbacks::run_callback;
+use crate::prelude::{Callbacks, SmbuilderError, Spec};
+use crate::util;
 
 use duct::cmd;
 use git2::build::RepoBuilder;
@@ -198,7 +199,7 @@ impl<'a> Builder<'a> {
                 )
             });
 
-        make_file_executable(&file_path)
+        util::make_file_executable(&file_path)
     }
 
     fn create_scripts_dir<P: AsRef<Path>>(&mut self, base_dir: P) -> PathBuf {
@@ -221,7 +222,7 @@ impl<'a> Builder<'a> {
             for script in scripts {
                 let script_path = script.save(&scripts_dir);
 
-                make_file_executable(&script_path);
+                util::make_file_executable(&script_path);
             }
         }
     }

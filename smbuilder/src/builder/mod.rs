@@ -6,12 +6,10 @@ pub mod types;
 pub mod builder;
 
 use crate::callback_types::LogType;
-use crate::prelude::{run_callback, Callbacks, Region};
-use LogType::*;
+use crate::prelude::{run_callback, Callbacks, Region, Spec};
 
 use types::SetupStage;
-
-use crate::prelude::Spec;
+use LogType::*;
 
 use std::path::Path;
 

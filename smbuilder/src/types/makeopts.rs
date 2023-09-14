@@ -1,7 +1,17 @@
-use crate::{makeopt, prelude::*};
+use crate::prelude::*;
+
+#[macro_export]
+/// A macro to make writing
+/// a makeopt less painful.
+///
+// TODO: example
+macro_rules! makeopt {
+    ($key:expr, $value:expr) => {
+        Makeopt::new($key, $value)
+    };
+}
 
 #[allow(missing_docs)]
-
 /// A common set of make flags
 /// across all sm64ex-based
 /// builds. Useful for launchers
