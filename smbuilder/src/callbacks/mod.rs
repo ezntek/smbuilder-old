@@ -69,7 +69,7 @@ impl<'cb> Callbacks<'cb> {
     // TODO: example
     pub fn log<F>(mut self, callback: F) -> Self
     where
-        F: FnMut(LogType, &str) + 'cb,
+        F: FnMut(LogType, &str) + Send + Sync + 'cb,
     {
         self.log_cb = Some(Box::new(callback) as Box<LogCb<'cb>>);
         self
@@ -84,7 +84,7 @@ impl<'cb> Callbacks<'cb> {
     // TODO: example.
     pub fn new_setup_stage<F>(mut self, callback: F) -> Self
     where
-        F: FnMut(SetupStage) + 'cb,
+        F: FnMut(SetupStage) + Send + Sync + 'cb,
     {
         self.new_setup_stage_cb = Some(Box::new(callback) as Box<NewSetupStageCb<'cb>>);
         self
@@ -97,7 +97,7 @@ impl<'cb> Callbacks<'cb> {
     /// for more information on arguments.
     pub fn new_postbuild_stage<F>(mut self, callback: F) -> Self
     where
-        F: FnMut(PostBuildStage) + 'cb,
+        F: FnMut(PostBuildStage) + Send + Sync + 'cb,
     {
         self.new_postbuild_stage_cb = Some(Box::new(callback) as Box<NewPostBuildStageCb<'cb>>);
         self
@@ -112,7 +112,7 @@ impl<'cb> Callbacks<'cb> {
     // TODO: example
     pub fn repo_clone_progress<F>(mut self, callback: F) -> Self
     where
-        F: FnMut(usize, usize, usize) + 'cb,
+        F: FnMut(usize, usize, usize) + Send + Sync + 'cb,
     {
         self.repo_clone_progress_cb = Some(Box::new(callback) as Box<RepoCloneProgressCb<'cb>>);
         self
@@ -127,7 +127,7 @@ impl<'cb> Callbacks<'cb> {
     // TODO: example
     pub fn new_postbuild_script<F>(mut self, callback: F) -> Self
     where
-        F: FnMut(&str, &str) + 'cb,
+        F: FnMut(&str, &str) + Send + Sync + 'cb,
     {
         self.new_postbuild_script_cb = Some(Box::new(callback) as Box<NewPostBuildScriptCb<'cb>>);
         self

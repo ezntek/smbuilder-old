@@ -1,4 +1,4 @@
-use std::path::PathBuf;
+use std::{path::PathBuf, thread};
 
 use clap::Parser;
 use colored::Colorize;
@@ -52,5 +52,10 @@ fn main() {
     let mut builder = Builder::new(spec, &args.base_dir, callbacks)
         .unwrap_or_else(|e| panic!("failed to create the builder: {}", e));
 
-    builder.build();
+    // throw it in a thread because why not
+    let thread = thread::spawn(move || {
+        builder.build();
+    });
+
+    thread.join().unwrap();
 }

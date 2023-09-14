@@ -5,26 +5,26 @@ use crate::prelude::builder_types::{PostBuildStage, SetupStage};
 /// Args:
 ///  * log type (error, warning, info, etc.)
 ///  * text to log
-pub type LogCb<'cb> = dyn FnMut(LogType, &str) + 'cb;
+pub type LogCb<'cb> = dyn FnMut(LogType, &str) + Send + Sync + 'cb;
 
 /// Callback for a new setup stage.
 ///
 /// Args:
 ///  * setup stage
-pub type NewSetupStageCb<'cb> = dyn FnMut(SetupStage) + 'cb;
+pub type NewSetupStageCb<'cb> = dyn FnMut(SetupStage) + Send + Sync + 'cb;
 
 /// Callback for a new post-build stage.
 ///
 /// Args:
 ///  * post-build stage
-pub type NewPostBuildStageCb<'cb> = dyn FnMut(PostBuildStage) + 'cb;
+pub type NewPostBuildStageCb<'cb> = dyn FnMut(PostBuildStage) + Send + Sync + 'cb;
 
 /// Callback for when a new Post-Build script is run.
 ///
 /// Args:
 ///  * filename of the script
 ///  * description of the script
-pub type NewPostBuildScriptCb<'cb> = dyn FnMut(&str, &str) + 'cb;
+pub type NewPostBuildScriptCb<'cb> = dyn FnMut(&str, &str) + Send + Sync + 'cb;
 
 /// Callback for repository clone progress.
 ///
@@ -32,7 +32,7 @@ pub type NewPostBuildScriptCb<'cb> = dyn FnMut(&str, &str) + 'cb;
 ///  * recieved objects
 ///  * total objects
 ///  * recieved bytes
-pub type RepoCloneProgressCb<'cb> = dyn FnMut(usize, usize, usize) + 'cb;
+pub type RepoCloneProgressCb<'cb> = dyn FnMut(usize, usize, usize) + Send + Sync + 'cb;
 
 /// An enum to represent
 /// a log type, for the
