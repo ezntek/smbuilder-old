@@ -1,13 +1,23 @@
-/// Re-exports from the `n64romconvert` crate,
-/// as its conversion features are (somewhat)
-/// critical to the build process.
+/// Re-export functions from the `n64romconvert` crate.
 pub mod romconvert {
     pub use n64romconvert::{byte_endian_swap, byte_swap, determine_format, endian_swap, RomType};
 }
 
-pub use crate::builder::*;
+// Builder stuff
+pub use crate::builder::builder::Builder;
+pub use crate::builder::types as builder_types;
+
+// callbacks
+pub use crate::callbacks::types as callback_types;
+pub use crate::callbacks::*;
+
+// spec
 pub use crate::spec::*;
+
+// core types
 pub use crate::types::*;
-pub use crate::SmbuilderError;
-pub use crate::{get_makeopts_string, make_file_executable, run_callback, Callbacks, LogType};
+
+// other stuff
+pub use crate::{get_makeopts_string, make_file_executable, run_callback};
+pub use errors::SmbuilderError;
 pub use romconvert::*;

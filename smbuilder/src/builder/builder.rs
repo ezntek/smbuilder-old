@@ -1,11 +1,17 @@
+use super::get_needed_setup_tasks;
+use super::types::{
+    PostBuildStage::*,
+    SetupStage::{self, *},
+};
+use crate::callbacks::types::LogType::{self, *};
+use crate::prelude::{run_callback, Callbacks};
+use crate::SmbuilderError;
+use crate::{make_file_executable, prelude::Spec};
+
 use duct::cmd;
 use git2::build::RepoBuilder;
 use git2::{FetchOptions, RemoteCallbacks};
 use n64romconvert::{byte_swap, endian_swap, RomType};
-
-use crate::prelude::{run_callback, Callbacks, LogType, Region};
-use crate::SmbuilderError;
-use crate::{make_file_executable, prelude::Spec};
 use std::io::{BufRead, BufReader};
 use std::sync::Arc;
 use std::{
@@ -13,81 +19,6 @@ use std::{
     io::Write,
     path::{Path, PathBuf},
 };
-
-use LogType::*;
-use PostBuildStage::*;
-use SetupStage::*;
-
-#[derive(Debug)]
-/// An enum to represent the different "setup stages"
-/// involved in building a port.
-///
-/// It includes critical steps to be able to
-/// build a basic, vanilla port.
-pub enum SetupStage {
-    /// Clone the repository from
-    /// the spec.
-    CloneRepo,
-
-    /// Copy the base ROM (and converts
-    /// its format, if necessary) into
-    /// the repo's root for asset extraction.
-    CopyRom,
-
-    /// Create the build script.
-    CreateBuildScript,
-
-    /// Create the post-build scripts directory,
-    CreateScriptsDir,
-
-    /// Write the Post-build scripts to disk.
-    WritePostBuildScripts,
-}
-
-#[derive(Debug)]
-/// An enum to represent the different post-build
-/// stages involved in building a port.
-///
-/// Represents actions such as installing model
-/// packs and texture packs, running scripts, etc.
-pub enum PostBuildStage {
-    /// Install the texture pack
-    TexturePack,
-    /// Install the DynOS packs(s)
-    DynOSPacks,
-    /// Run the Post-Build scripts
-    PostBuildScripts,
-}
-
-impl ToString for SetupStage {
-    fn to_string(&self) -> String {
-        use SetupStage::*;
-
-        let result = match self {
-            CloneRepo => "clone the repository",
-            CopyRom => "copy the base ROM",
-            CreateBuildScript => "create the build script",
-            CreateScriptsDir => "create the post-build script folder",
-            WritePostBuildScripts => "write the post-build scripts",
-        };
-
-        result.to_owned()
-    }
-}
-
-impl ToString for PostBuildStage {
-    fn to_string(&self) -> String {
-        use PostBuildStage::*;
-
-        let result = match self {
-            TexturePack => "install the texture pack",
-            DynOSPacks => "install the DynOS pack(s)",
-            PostBuildScripts => "run the post-build script(s)",
-        };
-
-        result.to_owned()
-    }
-}
 
 /// The main builder class which takes care of building
 /// a spec.
@@ -256,7 +187,7 @@ impl<'a> Builder<'a> {
         let mut build_script =
             fs::File::create(&file_path).expect("failed to create the build script file!");
 
-        let build_script_contents = self.spec.get_build_script(repo_dir.as_ref());
+        let build_script_contents = self.spec.to_script(repo_dir.as_ref());
 
         build_script
             .write_all(build_script_contents.as_bytes())
@@ -446,84 +377,5 @@ impl<'a> Builder<'a> {
         }
 
         self.post_build();
-    }
-}
-
-/// Get the core setup tasks that are needed.
-///
-/// Returns a list of `SmbuilderSetupStage`.
-// TODO: example
-pub fn get_needed_setup_tasks<P: AsRef<Path>>(
-    spec: &Spec,
-    base_dir: P,
-    callbacks: &mut Callbacks,
-) -> Vec<SetupStage> {
-    use SetupStage::*;
-
-    let base_dir = base_dir.as_ref();
-    let mut needed_stages: Vec<SetupStage> = Vec::new();
-
-    // check if the repo is cloned
-    if !base_dir.join(&spec.repo.name).exists() {
-        needed_stages.push(CloneRepo)
-    }
-
-    // check if the rom exists
-    if !base_dir
-        .join(&spec.repo.name)
-        .join(format!("baserom.{}.z64", spec.rom.region.to_string()))
-        .exists()
-    {
-        needed_stages.push(CopyRom)
-    }
-
-    // check if the build script exists
-    if !base_dir.join("build.sh").exists() {
-        needed_stages.push(CreateBuildScript)
-    }
-
-    // log
-    let needed_stages_string = needed_stages
-        .iter()
-        .map(|elem| elem.to_string())
-        .collect::<Vec<String>>()
-        .join(", ");
-
-    run_callback!(
-        callbacks.log_cb,
-        Info,
-        &format!("needed tasks: {}", needed_stages_string)
-    );
-
-    // post-build script stuff
-    if !base_dir.join("scripts").exists() {
-        needed_stages.push(CreateScriptsDir)
-    }
-
-    if let Some(scripts) = &spec.scripts {
-        for script in scripts {
-            if script.path.is_none() {
-                needed_stages.push(WritePostBuildScripts);
-                continue;
-            }
-        }
-    }
-
-    // return
-    needed_stages
-}
-
-impl ToString for Region {
-    fn to_string(&self) -> String {
-        use Region::*;
-
-        let retval = match self {
-            Us => "us",
-            Eu => "eu",
-            Jp => "jp",
-            Sh => "sh",
-        };
-
-        retval.to_owned()
     }
 }

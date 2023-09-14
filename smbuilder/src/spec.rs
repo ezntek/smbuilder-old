@@ -1,3 +1,4 @@
+use crate::callback_types::LogType;
 use crate::prelude::*;
 use crate::romconvert::determine_format;
 use derive_builder::Builder;
@@ -139,7 +140,7 @@ impl Spec {
     /// written to disk.
     ///
     //  TODO: example
-    pub fn get_build_script(&self, repo_path: &Path) -> String {
+    pub fn to_script(&self, repo_path: &Path) -> String {
         let makeopts_string = if let Some(makeopts) = &self.makeopts {
             get_makeopts_string(makeopts)
         } else {

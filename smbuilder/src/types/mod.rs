@@ -1,4 +1,13 @@
+/// Enums related to some
+/// common make flags that people
+/// generally set.
+pub mod makeopts;
+
+/// Error types.
+pub mod errors;
+
 use crate::prelude::*;
+use errors::SmbuilderError;
 use std::{
     fmt::Debug,
     fs,

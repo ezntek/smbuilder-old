@@ -19,9 +19,9 @@ fn main() {
         panic!("{} is not a directory! please enter the path to a directory with an `smbuilder.yaml` in the root of it.", args.base_dir.display());
     }
 
-    let mut callbacks = Callbacks::empty()
+    let mut callbacks = Callbacks::new()
         .log(|log_type, text| {
-            use LogType::*;
+            use callback_types::LogType::*;
 
             match log_type {
                 Error => println!("{}{}", "error: ".bold().red(), text),
