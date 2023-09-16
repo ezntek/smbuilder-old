@@ -1,6 +1,16 @@
 use crate::prelude::*;
 use std::{fs, os::unix::prelude::PermissionsExt, path::Path};
 
+#[macro_export]
+macro_rules! try_or_return {
+    ($result:expr, $or:expr) => {
+        match $result {
+            Ok(r) => r,
+            Err(e) => return Err($or),
+        }
+    };
+}
+
 /// Get a string of options in the format of
 /// bourne shell variables from a list of `makeopt`,
 /// for use with the `make` command.

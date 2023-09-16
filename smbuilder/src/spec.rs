@@ -48,12 +48,19 @@ impl Spec {
     /// lead to random panics**
     ///
     // TODO: example
-    pub fn from_file<P: AsRef<Path>>(path: P) -> Spec {
-        let file_string =
-            fs::read_to_string(&path).unwrap_or_else(|e| panic!("failed to read the file: {}", e));
+    pub fn from_file<P: AsRef<Path>>(path: P) -> BuilderResult<Spec> {
+        let file_string = match fs::read_to_string(&path) {
+            Ok(p) => p,
+            Err(e) => {
+                let err = err!(c_fs!(e), "failed to read the spec file");
+                return Err(err);
+            }
+        };
 
-        serde_yaml::from_str::<Spec>(&file_string)
-            .unwrap_or_else(|e| panic!("failed to parse the file into a yaml: {}", e))
+        match serde_yaml::from_str::<Spec>(&file_string) {
+            Ok(s) => Ok(s),
+            Err(e) => return Err(err!(c_other!(e), "failed to read parse the spec file")),
+        }
     }
 
     /// Check the spec if it is valid or not,
@@ -75,10 +82,7 @@ impl Spec {
                 std::io::ErrorKind::NotFound,
                 format!("the file at {} was not found!", &self.rom.path.display()),
             );
-            let err = err!(
-                c_other!(file_not_found_error),
-                "the spec file was not found"
-            );
+            let err = err!(c_fs!(file_not_found_error), "the spec file was not found");
             return Err(err);
         };
 

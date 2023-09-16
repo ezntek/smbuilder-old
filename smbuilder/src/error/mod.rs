@@ -5,29 +5,7 @@ use colored::Colorize;
 use std::fmt;
 
 /// Error macros to shortuct the creation of error types.
-pub mod macros {
-    pub use super::cause::{c_comp_failed, c_copy_rom, c_other, c_repo_clone};
-    #[allow(unused_imports)]
-    use super::Error;
-
-    #[macro_export]
-    /// Instantiate an Error struct.
-    ///
-    /// Variants:
-    ///  * `cause: ErrorCause` (can be used with `c_` macros)
-    ///  * same as above, but with `desc: impl ToString`
-    macro_rules! err {
-        ($cause:expr) => {
-            Error::new($cause, None)
-        };
-
-        ($cause:expr, $desc:expr) => {
-            Error::new($cause, Some($desc.to_string()))
-        };
-    }
-
-    pub use err;
-}
+pub mod macros;
 
 type AnyError = Box<dyn std::error::Error>;
 
@@ -41,11 +19,13 @@ pub struct Error {
     pub description: Option<String>,
 }
 
-fn format_any_error(e: &Option<AnyError>) -> String {
-    match e {
-        None => "".to_owned(),
-        Some(e) => format!(": ({})", e),
-    }
+macro_rules! fmt_anyerr {
+    ($e:expr) => {
+        match $e {
+            None => "".to_owned(),
+            Some(err) => format!(": ({})", err),
+        }
+    };
 }
 
 impl fmt::Display for ErrorCause {
@@ -57,17 +37,25 @@ impl fmt::Display for ErrorCause {
                 "whilst trying to clone from {} to {}{}",
                 url,
                 dir.display(),
-                format_any_error(ctx)
+                fmt_anyerr!(ctx)
             ),
             C::CopyRom { from, to, ctx } => write!(
                 f,
                 "whilst trying to copy a ROM from {} to {}{}",
                 from.display(),
                 to.display(),
-                format_any_error(ctx)
+                fmt_anyerr!(ctx)
             ),
+            C::Filesystem { msg, ctx } => {
+                write!(
+                    f,
+                    "(filesystem error) {}{}",
+                    msg.clone().unwrap_or(String::new()),
+                    ctx
+                )
+            }
             C::CompilationFailed { msg } => write!(f, "compilation failed: {}", msg),
-            C::Other { ctx } => write!(f, "an unexpected error occured{}", format_any_error(ctx),),
+            C::Other { ctx } => write!(f, "an unexpected error occured{}", fmt_anyerr!(ctx),),
         }
     }
 }

@@ -4,7 +4,7 @@
 pub mod makeopts;
 
 use crate::prelude::{builder_types::BuilderResult, Error};
-use crate::{c_other, prelude::*};
+use crate::{c_fs, prelude::*};
 use std::{
     fmt::Debug,
     fs,
@@ -236,20 +236,27 @@ impl PostBuildScript {
     /// a `Path`.
     ///
     // TODO: example
-    pub fn from_file<S, P>(name: S, description: S, file: P) -> Self
+    pub fn from_file<S, P>(name: S, description: S, file: P) -> BuilderResult<Self>
     where
         S: ToString,
         P: AsRef<Path>,
     {
-        let file_contents = fs::read_to_string(file)
-            .unwrap_or_else(|e| panic!("failed to read the post build script: {}", e));
+        let file = file.as_ref().to_owned();
+        let file_contents = match fs::read_to_string(&file) {
+            Ok(f) => f,
+            Err(e) => {
+                let err = err!(c_fs!(e, format!("failed to read {}", file.display())));
+                return Err(err);
+            }
+        };
 
-        PostBuildScript {
+        let res = PostBuildScript {
             name: name.to_string(),
             description: description.to_string(),
             contents: file_contents,
             path: None,
-        }
+        };
+        Ok(res)
     }
 
     /// Saves a post-build script from
@@ -257,30 +264,42 @@ impl PostBuildScript {
     /// File path.
     ///
     // TODO: example
-    pub fn save<P: AsRef<Path>>(&mut self, scripts_dir: P) -> PathBuf {
+    pub fn save<P: AsRef<Path>>(&mut self, scripts_dir: P) -> BuilderResult<PathBuf> {
         let mut script_path = scripts_dir.as_ref().join(&self.name);
         script_path.set_extension("sh");
 
-        let mut script_file = BufWriter::new(fs::File::create(&script_path).unwrap_or_else(|e| {
-            panic!(
-                "failed to create the file at {}: {}",
-                script_path.display(),
-                e
-            )
-        }));
+        let script_file = match fs::File::create(&script_path) {
+            Ok(f) => f,
+            Err(e) => {
+                let err = err!(
+                    c_fs!(
+                        e,
+                        format!("whilst trying to create {}", script_path.display())
+                    ),
+                    "failed to create the script file"
+                );
+                return Err(err);
+            }
+        };
 
-        script_file
-            .write_all(self.contents.as_bytes())
-            .unwrap_or_else(|e| {
-                panic!(
-                    "failed to write the file to {}: {}",
-                    script_path.display(),
-                    e
-                )
-            });
+        let mut script_file = BufWriter::new(script_file);
+
+        match script_file.write_all(self.contents.as_bytes()) {
+            Ok(_) => (),
+            Err(e) => {
+                let err = err!(
+                    c_fs!(
+                        e,
+                        format!("whilst trying to write to {}", script_path.display())
+                    ),
+                    "failed to write to the script file"
+                );
+                return Err(err);
+            }
+        };
 
         self.path = Some(script_path.clone());
-        script_path
+        Ok(script_path)
     }
 }
 
@@ -325,14 +344,19 @@ impl DynosPack {
             .join("dynos")
             .join("packs");
 
-        fs_extra::dir::copy(&self.path, &target_path, &CopyOptions::new()).unwrap_or_else(|e| {
-            panic!(
-                "failed to copy the DynOS pack from {} to {}: {}",
-                &self.path.display(),
-                &target_path.display(),
-                e
-            )
-        });
+        match fs_extra::dir::copy(&self.path, &target_path, &CopyOptions::new()) {
+            Ok(_) => (),
+            Err(e) => {
+                let msg = format!(
+                    "whilst copying the DynOS pack from {} to {}: {}",
+                    &self.path.display(),
+                    &target_path.display(),
+                    e
+                );
+                let err = err!(c_fs!(e, msg), "failed to copy the DynOS pack");
+                return Err(err);
+            }
+        };
 
         Ok(())
     }
@@ -396,7 +420,7 @@ impl TexturePack {
                 "could not find the gfx directory in the texture pack path!",
             );
 
-            let err = err!(c_other!(inner_err), "the texture pack is not valid!");
+            let err = err!(c_fs!(inner_err), "invalid texture pack"); // TODO:
             return Err(err);
         };
 

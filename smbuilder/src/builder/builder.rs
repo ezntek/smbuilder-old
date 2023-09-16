@@ -151,7 +151,7 @@ impl<'a> Builder<'a> {
         Ok((*repo_dir).clone())
     }
 
-    fn copy_rom<P: AsRef<Path>>(&mut self, repo_dir: P) {
+    fn copy_rom<P: AsRef<Path>>(&mut self, repo_dir: P) -> BuilderResult<()> {
         run_callback!(self.callbacks.new_setup_stage_cb, CopyRom);
         use RomType::*;
 
@@ -163,13 +163,17 @@ impl<'a> Builder<'a> {
         run_callback!(self.callbacks.log_cb, Info, "copying the ROM");
 
         if rom_type == BigEndian {
-            fs::copy(&self.spec.rom.path, &target_rom_path).unwrap_or_else(|_| {
-                panic!(
-                    "failed to copy the ROM from {} to {}!",
-                    &self.spec.rom.path.display(),
-                    target_rom_path.display()
-                )
-            });
+            match fs::copy(&self.spec.rom.path, &target_rom_path) {
+                Ok(_) => Ok(()),
+                Err(e) => {
+                    let msg = format!(
+                        "failed to copy the ROM from {} to {}!",
+                        &self.spec.rom.path.display(),
+                        target_rom_path.display()
+                    );
+                    return Err(err!(c_fs!(e, msg), "whilst copying the ROM file"));
+                }
+            }
         } else {
             run_callback!(
                 self.callbacks.log_cb,
@@ -186,11 +190,13 @@ impl<'a> Builder<'a> {
                 LittleEndian => endian_swap(&self.spec.rom.path, &target_rom_path),
                 ByteSwapped => byte_swap(&self.spec.rom.path, &target_rom_path),
                 _ => unreachable!(),
-            }
+            };
+
+            Ok(())
         }
     }
 
-    fn create_build_script<P: AsRef<Path>>(&mut self, repo_dir: P) {
+    fn create_build_script<P: AsRef<Path>>(&mut self, repo_dir: P) -> BuilderResult<()> {
         run_callback!(self.callbacks.new_setup_stage_cb, CreateBuildScript);
 
         let file_path = self.base_dir.join("build.sh");
@@ -200,29 +206,40 @@ impl<'a> Builder<'a> {
 
         let build_script_contents = self.spec.to_script(repo_dir.as_ref());
 
-        build_script
-            .write_all(build_script_contents.as_bytes())
-            .unwrap_or_else(|_| {
-                panic!(
+        match build_script.write_all(build_script_contents.as_bytes()) {
+            Ok(_) => (),
+            Err(e) => {
+                let msg = format!(
                     "failed to write to the build script at {}!",
                     &file_path.display()
-                )
-            });
+                );
+                return Err(err!(c_fs!(e, msg), "whilst writing the build script"));
+            }
+        };
 
-        util::make_file_executable(&file_path)
+        util::make_file_executable(&file_path);
+        Ok(())
     }
 
-    fn create_scripts_dir<P: AsRef<Path>>(&mut self, base_dir: P) -> PathBuf {
+    fn create_scripts_dir<P: AsRef<Path>>(&mut self, base_dir: P) -> BuilderResult<PathBuf> {
         run_callback!(self.callbacks.new_setup_stage_cb, CreateScriptsDir);
 
         let scripts_dir = base_dir.as_ref().join("scripts");
 
         if !scripts_dir.exists() {
-            fs::create_dir(&scripts_dir)
-                .unwrap_or_else(|e| panic!("failed to create the build scripts dir: {}", e));
+            match fs::create_dir(&scripts_dir) {
+                Ok(_) => (),
+                Err(e) => {
+                    let msg = format!("failed to create the build scripts dir: {}", e);
+                    return Err(err!(
+                        c_fs!(e, msg),
+                        "whilst trying to create the build script directory"
+                    ));
+                }
+            }
         }
 
-        scripts_dir
+        Ok(scripts_dir)
     }
 
     fn write_scripts<P: AsRef<Path>>(&mut self, scripts_dir: P) {
@@ -230,7 +247,7 @@ impl<'a> Builder<'a> {
 
         if let Some(scripts) = &mut self.spec.scripts {
             for script in scripts {
-                let script_path = script.save(&scripts_dir);
+                let script_path = script.save(&scripts_dir).unwrap(); // BUG: unwrap
 
                 util::make_file_executable(&script_path);
             }
@@ -277,7 +294,7 @@ impl<'a> Builder<'a> {
         for line in reader.lines() {
             let ln = match line {
                 Ok(line) => line,
-                Err(e) => panic!("The build command failed to run: {}", e),
+                Err(e) => panic!("something went wrong: {}", e),
             }; // exit when there is no more output
 
             run_callback!(self.callbacks.log_cb, BuildOutput, &ln);

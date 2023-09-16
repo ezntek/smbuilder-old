@@ -22,6 +22,13 @@ pub enum ErrorCause {
         /// Context (possible cause)
         ctx: Option<AnyError>,
     },
+    /// Indicates any error that relates to the FS.
+    Filesystem {
+        /// Any related message
+        msg: Option<String>,
+        /// Cause
+        ctx: AnyError,
+    },
     /// Indicates a failure in running the build command.
     ///
     /// the `duct` crate does not provide exit status
@@ -38,73 +45,3 @@ pub enum ErrorCause {
         ctx: Option<AnyError>,
     },
 }
-
-#[macro_export]
-/// Repo Clone error cause.
-///
-/// Rules:
-///  * `url: String, dir: PathBuf`
-///  * same as above but with `ctx: impl std::error::Error`
-macro_rules! c_repo_clone {
-    ($url:expr, $dir:expr) => {
-        ErrorCause::RepoClone {
-            url: $url,
-            dir: $dir,
-            ctx: None,
-        }
-    };
-
-    ($url:expr, $dir:expr, $ctx:expr) => {
-        ErrorCause::RepoClone {
-            url: $url,
-            dir: $dir,
-            ctx: Some(Box::new($ctx)),
-        }
-    };
-}
-
-#[macro_export]
-/// Rom Copy error cause
-///
-// TODO: Document
-macro_rules! c_copy_rom {
-    ($from:expr, $to:expr) => {
-        ErrorCause::CopyRom {
-            from: $from,
-            to: $to,
-            ctx: None,
-        }
-    };
-
-    ($from:expr, $to:expr, $ctx:expr) => {
-        ErrorCause::CopyRom {
-            from: $from,
-            to: $to,
-            ctx: Some(Box::new($ctx)),
-        }
-    };
-}
-
-#[macro_export]
-/// Compilation failed error cause
-///
-/// `msg: String`
-macro_rules! c_comp_failed {
-    ($msg:expr) => {
-        ErrorCause::CompilationFailed { msg: $msg }
-    };
-}
-
-#[macro_export]
-/// Generic error cause
-///
-/// `ctx: impl std::error::Error`
-macro_rules! c_other {
-    ($ctx:expr) => {
-        ErrorCause::Other {
-            ctx: Some(Box::new($ctx)),
-        }
-    };
-}
-
-pub use {c_comp_failed, c_copy_rom, c_other, c_repo_clone};
