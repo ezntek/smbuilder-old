@@ -254,7 +254,7 @@ impl<'a> Builder<'a> {
         }
     }
 
-    fn setup_build(&mut self) {
+    fn setup_build(&mut self) -> BuilderResult<()> {
         use SetupStage::*;
 
         let needed_targets =
@@ -269,17 +269,19 @@ impl<'a> Builder<'a> {
                     let _ = self.clone_repo();
                 }
                 CopyRom => {
-                    self.copy_rom(&repo_dir);
+                    self.copy_rom(&repo_dir)?;
                 }
                 CreateBuildScript => {
-                    self.create_build_script(&repo_dir);
+                    self.create_build_script(&repo_dir)?;
                 }
                 CreateScriptsDir => {
-                    let _ = self.create_scripts_dir(self.base_dir.clone());
+                    let _ = self.create_scripts_dir(self.base_dir.clone())?;
                 }
                 WritePostBuildScripts => self.write_scripts(&scripts_dir),
             }
         }
+
+        Ok(())
     }
 
     fn compile(&mut self) {
@@ -301,48 +303,47 @@ impl<'a> Builder<'a> {
         }
     }
 
-    fn install_texture_pack(&mut self) {
+    fn install_texture_pack(&mut self) -> BuilderResult<()> {
         run_callback!(self.callbacks.new_postbuild_stage_cb, TexturePack);
 
         let pack = if let Some(pack) = &self.spec.texture_pack {
             pack
         } else {
-            return;
+            return Ok(());
         };
 
         let repo_dir = &self.base_dir.join(&self.spec.repo.name);
 
-        pack.install(&self.spec, repo_dir).unwrap_or_else(|e| {
-            run_callback!(self.callbacks.log_cb, LogType::Error, &e.to_string());
-        });
+        pack.install(&self.spec, repo_dir)?;
+
+        Ok(())
     }
 
-    fn install_dynos_packs(&mut self) {
+    fn install_dynos_packs(&mut self) -> BuilderResult<()> {
         run_callback!(self.callbacks.new_postbuild_stage_cb, DynOSPacks);
 
         let packs = if let Some(packs) = &self.spec.dynos_packs {
             packs
         } else {
-            return;
+            return Ok(());
         };
 
         let repo_dir = &self.base_dir.join(&self.spec.repo.name);
 
         for pack in packs {
-            pack.install(&self.spec, repo_dir, &mut self.callbacks)
-                .unwrap_or_else(|e| {
-                    run_callback!(self.callbacks.log_cb, LogType::Error, &e.to_string());
-                });
+            pack.install(&self.spec, repo_dir, &mut self.callbacks)?;
         }
+
+        Ok(())
     }
 
-    fn run_postbuild_scripts(&mut self) {
+    fn run_postbuild_scripts(&mut self) -> BuilderResult<()> {
         run_callback!(self.callbacks.new_postbuild_stage_cb, PostBuildScripts);
 
         let scripts = if let Some(scripts) = &self.spec.scripts {
             scripts
         } else {
-            return;
+            return Ok(());
         };
 
         for script in scripts {
@@ -357,15 +358,30 @@ impl<'a> Builder<'a> {
             });
 
             let cmd = cmd!(script_path);
-            cmd.run()
-                .unwrap_or_else(|e| panic!("failed to run the command: {}", e));
+            match cmd.run() {
+                Ok(_) => (),
+                Err(e) => {
+                    return Err(err!(
+                        c_spawn_cmd!(
+                            script_path.to_string_lossy().to_string(),
+                            "failed to run the script",
+                            e
+                        ),
+                        format!("whilst trying to run script {}", script.name)
+                    ))
+                }
+            };
         }
+
+        Ok(())
     }
 
-    fn post_build(&mut self) {
-        self.install_texture_pack();
-        self.install_dynos_packs();
-        self.run_postbuild_scripts();
+    fn post_build(&mut self) -> BuilderResult<()> {
+        self.install_texture_pack()?;
+        self.install_dynos_packs()?;
+        self.run_postbuild_scripts()?;
+
+        Ok(())
     }
 
     /// Build the spec.
@@ -380,8 +396,8 @@ impl<'a> Builder<'a> {
     /// // to itself for the callbacks.
     /// builder.build();
     /// ```
-    pub fn build(&mut self) {
-        self.setup_build();
+    pub fn build(&mut self) -> BuilderResult<()> {
+        self.setup_build()?;
 
         let executable_name = format!("sm64.{}.f3dex2e", self.spec.rom.region.to_string());
 
@@ -405,6 +421,7 @@ impl<'a> Builder<'a> {
             );
         }
 
-        self.post_build();
+        self.post_build()?;
+        Ok(())
     }
 }

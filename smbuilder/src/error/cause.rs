@@ -13,21 +13,22 @@ pub enum ErrorCause {
         /// Context (possible cause)
         ctx: Option<AnyError>,
     },
-    /// Indicates a failure when copying the ROM.
-    CopyRom {
-        /// The path of the rom
-        from: PathBuf,
-        /// The new path of the rom.
-        to: PathBuf,
-        /// Context (possible cause)
-        ctx: Option<AnyError>,
-    },
     /// Indicates any error that relates to the FS.
     Filesystem {
         /// Any related message
         msg: Option<String>,
         /// Cause
         ctx: AnyError,
+    },
+    /// Indicates an error that occured whilst launching
+    /// a command.
+    LaunchCmdError {
+        /// Command that was launched
+        cmd: String,
+        /// Any notes
+        msg: Option<String>,
+        /// Possible cause (if any)
+        ctx: Option<AnyError>,
     },
     /// Indicates a failure in running the build command.
     ///
@@ -38,7 +39,6 @@ pub enum ErrorCause {
         /// The message that the program would like to give.
         msg: &'static str,
     },
-
     /// An error that doesnt apply to any of the variants
     Other {
         /// Context (cause, if any)

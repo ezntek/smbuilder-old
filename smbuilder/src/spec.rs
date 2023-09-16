@@ -129,7 +129,7 @@ impl Spec {
         path: P,
         callbacks: &mut Callbacks,
     ) -> BuilderResult<Spec> {
-        let mut spec = Spec::from_file(path);
+        let mut spec = Spec::from_file(path)?;
 
         let check_result = Spec::check_spec(&mut spec, callbacks);
 

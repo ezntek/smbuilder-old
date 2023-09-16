@@ -41,7 +41,13 @@ fn get_builder<'b>(base_dir: PathBuf) -> Builder<'b> {
 }
 
 fn build<'b>(mut builder: Builder<'b>) {
-    builder.build();
+    match builder.build() {
+        Ok(_) => (),
+        Err(e) => {
+            eprintln!("{}", e.to_string());
+            std::process::exit(1);
+        }
+    };
 }
 
 fn main() {

@@ -39,19 +39,21 @@ impl fmt::Display for ErrorCause {
                 dir.display(),
                 fmt_anyerr!(ctx)
             ),
-            C::CopyRom { from, to, ctx } => write!(
-                f,
-                "whilst trying to copy a ROM from {} to {}{}",
-                from.display(),
-                to.display(),
-                fmt_anyerr!(ctx)
-            ),
             C::Filesystem { msg, ctx } => {
                 write!(
                     f,
-                    "(filesystem error) {}{}",
+                    "whilst working with the filesystem{} ({})",
+                    ctx,
                     msg.clone().unwrap_or(String::new()),
-                    ctx
+                )
+            }
+            C::LaunchCmdError { cmd, msg, ctx } => {
+                write!(
+                    f,
+                    "launching the command `{}` failed{} ({})",
+                    cmd,
+                    fmt_anyerr!(ctx),
+                    msg.clone().unwrap_or(String::new())
                 )
             }
             C::CompilationFailed { msg } => write!(f, "compilation failed: {}", msg),

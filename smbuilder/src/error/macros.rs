@@ -27,28 +27,6 @@ macro_rules! c_repo_clone {
 }
 
 #[macro_export]
-/// Rom Copy error cause
-///
-// TODO: Document
-macro_rules! c_copy_rom {
-    ($from:expr, $to:expr) => {
-        ErrorCause::CopyRom {
-            from: $from,
-            to: $to,
-            ctx: None,
-        }
-    };
-
-    ($from:expr, $to:expr, $ctx:expr) => {
-        ErrorCause::CopyRom {
-            from: $from,
-            to: $to,
-            ctx: Some(Box::new($ctx)),
-        }
-    };
-}
-
-#[macro_export]
 /// Compilation failed error cause
 ///
 /// `msg: String`
@@ -92,7 +70,40 @@ macro_rules! c_fs {
     };
 }
 
-pub use {c_comp_failed, c_copy_rom, c_fs, c_other, c_repo_clone};
+#[macro_export]
+/// A command-spawning error.
+///
+/// Rules:
+///  * `cmd: String`
+///  * `cmd: String, ctx: impl std::error::Error`
+///  * `cmd: String, msg: String, ctx: impl std::error::Error`
+macro_rules! c_spawn_cmd {
+    ($cmd:expr) => {
+        ErrorCause::LaunchCmdError {
+            cmd: $cmd,
+            msg: None,
+            ctx: None,
+        }
+    };
+
+    ($cmd:expr,$ctx:expr) => {
+        ErrorCause::LaunchCmdError {
+            cmd: $cmd,
+            msg: None,
+            ctx: Some($ctx),
+        }
+    };
+
+    ($cmd:expr,$msg:expr,$ctx:expr) => {
+        ErrorCause::LaunchCmdError {
+            cmd: $cmd,
+            msg: Some($msg.to_string()),
+            ctx: Some(Box::new($ctx)),
+        }
+    };
+}
+
+pub use {c_comp_failed, c_fs, c_other, c_repo_clone, c_spawn_cmd};
 
 #[macro_export]
 /// Instantiate an Error struct.
