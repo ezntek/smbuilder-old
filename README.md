@@ -30,11 +30,11 @@ before issuing `path/to/smbuilder-cli path/to/folder` to start the build. **Do e
 
 ## To-Dos
 
- * [ ] redo documentation
- * [ ] implement patches
- * [ ] implement uninstallation of patches, packs, etc.
- * [ ] test everything
- * [ ] make the errors clearer
- * [ ] write a ref implementation with a GUI toolkit
- * [ ] publish to crates.io
- * [ ] write the examples (Medium)
+|Completed|Task|Priority|
+|---------|----|--------|
+|yes|redo errors|**High**|
+|~~no~~|~~make the errors clearer~~|~~Medium~~|
+|no|redo documentation|Low|
+|no|implement patches|**High**|
+|no|implement uninstallation of add-ons (patches, packs etc.)|Medium|
+|no|write examples|Low|
