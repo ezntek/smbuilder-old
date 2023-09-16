@@ -1,3 +1,11 @@
+use crate::prelude::Error;
+
+/// Error type.
+///
+/// Aliases a `Result<_, SmbuilderError>` to
+/// something more sensible.
+pub type BuilderResult<T> = Result<T, Error>;
+
 #[derive(Debug)]
 /// An enum to represent the different "setup stages"
 /// involved in building a port.

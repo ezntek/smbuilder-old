@@ -6,7 +6,7 @@ use super::types::{
 
 use crate::callback_types::LogType::{self, *};
 use crate::callbacks::run_callback;
-use crate::prelude::{Callbacks, SmbuilderError, Spec};
+use crate::prelude::{Callbacks, Error, Spec};
 use crate::util;
 
 use duct::cmd;
@@ -75,7 +75,7 @@ impl<'a> Builder<'a> {
         spec: Spec,
         base_dir: P,
         callbacks: Callbacks,
-    ) -> Result<Builder, SmbuilderError> {
+    ) -> Result<Builder, Error> {
         let result = Builder {
             spec,
             base_dir: base_dir.into(),
@@ -93,8 +93,8 @@ impl<'a> Builder<'a> {
 
         run_callback!(self.callbacks.log_cb, Info, "cloning the repository");
 
-        let repo_dir_thread = Arc::clone(&repo_dir);
         // set up the ctrlc handler
+        let repo_dir_thread = Arc::clone(&repo_dir);
         ctrlc::set_handler(move || {
             let repo_dir = (*(repo_dir_thread.clone())).clone();
             println!("exiting on control-c...");
@@ -124,7 +124,9 @@ impl<'a> Builder<'a> {
         });
 
         let mut fetch_options = FetchOptions::new();
-        fetch_options.remote_callbacks(remote_callbacks);
+        fetch_options
+            .remote_callbacks(remote_callbacks)
+            .follow_redirects(git2::RemoteRedirect::All);
 
         RepoBuilder::new()
             .branch(&self.spec.repo.branch)

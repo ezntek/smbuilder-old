@@ -37,6 +37,9 @@ pub mod prelude;
 /// build resources to rust types.
 pub mod types;
 
+/// Error types.
+pub mod error;
+
 /// Build progress callbacks.
 pub mod callbacks;
 

@@ -3,11 +3,8 @@
 /// generally set.
 pub mod makeopts;
 
-/// Error types.
-pub mod errors;
-
+use crate::prelude::Error;
 use crate::prelude::*;
-use errors::SmbuilderError;
 use std::{
     fmt::Debug,
     fs,
@@ -185,11 +182,9 @@ impl Makeopt {
         }
     }
 
-    /// Gets a list of default
-    /// makeopts with sane
-    /// defaults, and options
-    /// for the current OS.
-    ///
+    /// Gets a list of default makeopts with
+    /// sane defaults, and options for the
+    /// current OS.
     // TODO: example
     pub fn default_makeopts() -> Vec<Self> {
         let mut makeopts: Vec<Makeopt> = Vec::new();
@@ -212,19 +207,15 @@ impl Makeopt {
 
         // macOS stuff
         #[cfg(target_os = "macos")]
-        #[cfg(target_arch = "x86_64")]
         {
             push_makeopt!("OSX_BUILD", "1");
-            push_makeopt!("TARGET_ARCH", "x86_64-apple-darwin");
             push_makeopt!("TARGET_BITS", "64");
-        };
 
-        #[cfg(target_os = "macos")]
-        #[cfg(target_arch = "aarch64")]
-        {
-            push_makeopt!("OSX_BUILD", "1");
+            #[cfg(target_arch = "x86_64")]
+            push_makeopt!("TARGET_ARCH", "x86_64-apple-darwin");
+
+            #[cfg(target_arch = "aarch64")]
             push_makeopt!("TARGET_ARCH", "aarch64-apple-darwin");
-            push_makeopt!("TARGET_BITS", "64");
         };
 
         makeopts
@@ -312,14 +303,11 @@ impl DynosPack {
     /// into the correct location)
     ///
     // TODO: example
-    pub fn install<P: AsRef<Path>>(&self, spec: &Spec, repo_dir: P) -> Result<(), SmbuilderError> {
+    pub fn install<P: AsRef<Path>>(&self, spec: &Spec, repo_dir: P) -> Result<(), Error> {
         //let dir_name = self.path.iter().last().unwrap();
 
         if !spec.repo.supports_dynos {
-            return Err(SmbuilderError::new(
-                None,
-                "the repo does not support DynOS Packs!",
-            ));
+            return Err(Error::new(None, "the repo does not support DynOS Packs!"));
         }
 
         let target_path = repo_dir
@@ -384,7 +372,7 @@ impl TexturePack {
     /// it into the correct location)
     ///
     // TODO: example
-    pub fn install<P: AsRef<Path>>(&self, spec: &Spec, repo_dir: P) -> Result<(), SmbuilderError> {
+    pub fn install<P: AsRef<Path>>(&self, spec: &Spec, repo_dir: P) -> Result<(), Error> {
         let target_path = repo_dir
             .as_ref()
             .join("build")
@@ -401,7 +389,7 @@ impl TexturePack {
                 "could not find the gfx directory in the texture pack path!",
             );
 
-            return Err(SmbuilderError::new(
+            return Err(Error::new(
                 Some(Box::new(inner_err)),
                 "the texture pack is not valid!",
             ));

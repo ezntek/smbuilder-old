@@ -18,5 +18,5 @@ pub use crate::spec::*;
 pub use crate::types::*;
 
 // other stuff
-pub use errors::SmbuilderError;
+pub use crate::error::Error;
 pub use romconvert::*;

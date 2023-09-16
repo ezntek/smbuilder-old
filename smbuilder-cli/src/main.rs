@@ -10,25 +10,16 @@ struct Args {
     base_dir: PathBuf,
 }
 
-fn main() {
-    color_eyre::install().unwrap();
-
-    let args = Args::parse();
-
-    if !args.base_dir.is_dir() {
-        panic!("{} is not a directory! please enter the path to a directory with an `smbuilder.yaml` in the root of it.", args.base_dir.display());
-    }
-
+fn get_builder<'b>(base_dir: PathBuf) -> Builder<'b> {
     let mut callbacks = Callbacks::new()
         .log(|log_type, text| {
-            use callback_types::LogType::*;
-
+            use callback_types::LogType as L;
             match log_type {
-                Error => println!("{}{}", "error: ".bold().red(), text),
-                Warn => println!("{}{}", "warn: ".bold().magenta(), text),
-                BuildOutput => println!("{}{}", "make: ".bold().cyan(), text),
-                Info => println!("{}{}", "info: ".bold().blue(), text),
-            };
+                L::Error => eprintln!("{}{}", "error: ".bold().red(), text),
+                L::Warn => eprintln!("{}{}", "warn: ".bold().magenta(), text),
+                L::BuildOutput => println!("{}{}", "make: ".bold().cyan(), text),
+                L::Info => println!("{}{}", "info: ".bold().blue(), text),
+            }
         })
         .repo_clone_progress(|recv_objs, total_objs, bytes_transferred| {
             print!(
@@ -44,18 +35,29 @@ fn main() {
             println!("{}{}", "stage: ".bold().green(), stage.to_string());
         });
 
-    let spec_path = args.base_dir.join("smbuilder.yaml");
+    let spec_path = base_dir.join("build.yaml");
+    let spec = Spec::from_file_checked(spec_path, &mut callbacks).unwrap();
+    Builder::new(spec, base_dir.clone(), callbacks).unwrap()
+}
 
-    let spec = Spec::from_file_checked(&spec_path, &mut callbacks)
-        .unwrap_or_else(|e| panic!("failed to create the spec: {}", e));
+fn build<'b>(mut builder: Builder<'b>) {
+    builder.build();
+}
 
-    let mut builder = Builder::new(spec, &args.base_dir, callbacks)
-        .unwrap_or_else(|e| panic!("failed to create the builder: {}", e));
+fn main() {
+    color_eyre::install().unwrap();
 
-    // throw it in a thread because why not
-    let thread = thread::spawn(move || {
-        builder.build();
-    });
+    let args = Args::parse();
 
-    thread.join().unwrap();
+    if !args.base_dir.is_dir() {
+        panic!("{} is not a directory! please enter the path to a directory with an `build.yaml` in the root of it.", args.base_dir.display());
+    }
+
+    let builder = get_builder(args.base_dir);
+
+    thread::spawn(move || {
+        build(builder);
+    })
+    .join()
+    .unwrap();
 }

@@ -60,8 +60,8 @@ impl Spec {
     /// imperfection.
     ///
     /// Designed for use with `from_file_checked`.
-    pub fn check_spec(&mut self, callbacks: &mut Callbacks) -> Result<(), SmbuilderError> {
-        use LogType::*;
+    pub fn check_spec(&mut self, callbacks: &mut Callbacks) -> Result<(), Error> {
+        use LogType as L;
 
         // Check the ROM format and see
         // if it matches the spec
@@ -72,7 +72,7 @@ impl Spec {
                 std::io::ErrorKind::NotFound,
                 format!("the file at {} was not found!", &self.rom.path.display()),
             );
-            return Err(SmbuilderError::new(
+            return Err(Error::new(
                 Some(Box::new(file_not_found_error)),
                 "the ROM at the given path was not found!",
             ));
@@ -81,7 +81,7 @@ impl Spec {
         let verified_rom_format = match determine_format(rom_path) {
             Ok(t) => t,
             Err(e) => {
-                return Err(SmbuilderError::new(
+                return Err(Error::new(
                     Some(Box::new(e)),
                     "failed to verify the ROM's format",
                 ))
@@ -91,7 +91,7 @@ impl Spec {
         if verified_rom_format != self.rom.format {
             run_callback!(
                 callbacks.log_cb,
-                Warn,
+                L::Warn,
                 &format!(
                     "the ROM format specified in the spec ({:?}) does not match the file ({:?})!",
                     self.rom.format, verified_rom_format
@@ -104,13 +104,13 @@ impl Spec {
         if self.jobs.is_none() {
             run_callback!(
                 callbacks.log_cb,
-                Warn,
+                L::Warn,
                 "did not find a value for jobs in the spec!"
             );
 
             run_callback!(
                 callbacks.log_cb,
-                Warn,
+                L::Warn,
                 "it is highly advised for you to specify the variable!"
             );
         }
@@ -125,7 +125,7 @@ impl Spec {
     pub fn from_file_checked<P: AsRef<Path>>(
         path: P,
         callbacks: &mut Callbacks,
-    ) -> Result<Spec, SmbuilderError> {
+    ) -> Result<Spec, Error> {
         let mut spec = Spec::from_file(path);
 
         let check_result = Spec::check_spec(&mut spec, callbacks);

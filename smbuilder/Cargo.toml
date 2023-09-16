@@ -9,7 +9,7 @@ edition = "2021"
 colored = "2.0.0"
 ctrlc = "3.4.0"
 duct = "0.13.6"
-git2 = "0.17.1"
+git2 = "0.18.0"
 n64romconvert = "1.0.2"
 serde = { version = "1.0.162", features = ["serde_derive"] }
 serde_yaml = "0.9.22"
