@@ -1,7 +1,10 @@
 use crate::callback_types::LogType;
-use crate::prelude::*;
+use crate::error::ErrorCause;
+use crate::prelude::error_macros::*;
+use crate::prelude::{builder_types::BuilderResult, *};
 use crate::romconvert::determine_format;
 use crate::util;
+
 use derive_builder::Builder;
 use serde::{Deserialize, Serialize};
 use std::fs;
@@ -60,7 +63,7 @@ impl Spec {
     /// imperfection.
     ///
     /// Designed for use with `from_file_checked`.
-    pub fn check_spec(&mut self, callbacks: &mut Callbacks) -> Result<(), Error> {
+    pub fn check_spec(&mut self, callbacks: &mut Callbacks) -> BuilderResult<()> {
         use LogType as L;
 
         // Check the ROM format and see
@@ -72,20 +75,16 @@ impl Spec {
                 std::io::ErrorKind::NotFound,
                 format!("the file at {} was not found!", &self.rom.path.display()),
             );
-            return Err(Error::new(
-                Some(Box::new(file_not_found_error)),
-                "the ROM at the given path was not found!",
-            ));
+            let err = err!(
+                c_other!(file_not_found_error),
+                "the spec file was not found"
+            );
+            return Err(err);
         };
 
         let verified_rom_format = match determine_format(rom_path) {
             Ok(t) => t,
-            Err(e) => {
-                return Err(Error::new(
-                    Some(Box::new(e)),
-                    "failed to verify the ROM's format",
-                ))
-            }
+            Err(e) => return Err(err!(c_other!(e), "failed to verify the format of the ROM")),
         };
 
         if verified_rom_format != self.rom.format {
@@ -125,7 +124,7 @@ impl Spec {
     pub fn from_file_checked<P: AsRef<Path>>(
         path: P,
         callbacks: &mut Callbacks,
-    ) -> Result<Spec, Error> {
+    ) -> BuilderResult<Spec> {
         let mut spec = Spec::from_file(path);
 
         let check_result = Spec::check_spec(&mut spec, callbacks);

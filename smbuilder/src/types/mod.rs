@@ -3,8 +3,8 @@
 /// generally set.
 pub mod makeopts;
 
-use crate::prelude::Error;
-use crate::prelude::*;
+use crate::prelude::{builder_types::BuilderResult, Error};
+use crate::{c_other, prelude::*};
 use std::{
     fmt::Debug,
     fs,
@@ -303,11 +303,19 @@ impl DynosPack {
     /// into the correct location)
     ///
     // TODO: example
-    pub fn install<P: AsRef<Path>>(&self, spec: &Spec, repo_dir: P) -> Result<(), Error> {
-        //let dir_name = self.path.iter().last().unwrap();
-
+    pub fn install<P: AsRef<Path>>(
+        &self,
+        spec: &Spec,
+        repo_dir: P,
+        callbacks: &mut Callbacks,
+    ) -> BuilderResult<()> {
         if !spec.repo.supports_dynos {
-            return Err(Error::new(None, "the repo does not support DynOS Packs!"));
+            run_callback!(
+                callbacks.log_cb,
+                types::LogType::Warn,
+                "this build does not support DynOS packs. stopping."
+            );
+            return Ok(());
         }
 
         let target_path = repo_dir
@@ -316,8 +324,7 @@ impl DynosPack {
             .join(format!("{}_pc", spec.rom.region.to_string()))
             .join("dynos")
             .join("packs");
-        //.join(dir_name);
-        // {repo_dir}/build/{region}_pc/dynos/packs/{name of the pack's dirname}
+
         fs_extra::dir::copy(&self.path, &target_path, &CopyOptions::new()).unwrap_or_else(|e| {
             panic!(
                 "failed to copy the DynOS pack from {} to {}: {}",
@@ -389,10 +396,8 @@ impl TexturePack {
                 "could not find the gfx directory in the texture pack path!",
             );
 
-            return Err(Error::new(
-                Some(Box::new(inner_err)),
-                "the texture pack is not valid!",
-            ));
+            let err = err!(c_other!(inner_err), "the texture pack is not valid!");
+            return Err(err);
         };
 
         fs_extra::dir::copy(pack_path, &target_path, &CopyOptions::new()).unwrap_or_else(|e| {

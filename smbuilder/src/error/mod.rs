@@ -1,46 +1,35 @@
+mod cause;
+
+pub use cause::*;
 use colored::Colorize;
 use std::fmt;
-use std::path::PathBuf;
+
+/// Error macros to shortuct the creation of error types.
+pub mod macros {
+    pub use super::cause::{c_comp_failed, c_copy_rom, c_other, c_repo_clone};
+    #[allow(unused_imports)]
+    use super::Error;
+
+    #[macro_export]
+    /// Instantiate an Error struct.
+    ///
+    /// Variants:
+    ///  * `cause: ErrorCause` (can be used with `c_` macros)
+    ///  * same as above, but with `desc: impl ToString`
+    macro_rules! err {
+        ($cause:expr) => {
+            Error::new($cause, None)
+        };
+
+        ($cause:expr, $desc:expr) => {
+            Error::new($cause, Some($desc.to_string()))
+        };
+    }
+
+    pub use err;
+}
 
 type AnyError = Box<dyn std::error::Error>;
-
-#[derive(Debug)]
-/// Possible causes for an error
-pub enum ErrorCause {
-    /// Indicates a failure in cloning a repo.
-    RepoClone {
-        /// the URL of the repo being cloned.
-        url: String,
-        /// The target directory of the clone.
-        dir: PathBuf,
-        /// Context (possible cause)
-        ctx: Option<AnyError>,
-    },
-    /// Indicates a failure when copying the ROM.
-    CopyRom {
-        /// The path of the rom
-        from: PathBuf,
-        /// The new path of the rom.
-        to: PathBuf,
-        /// Context (possible cause)
-        ctx: Option<AnyError>,
-    },
-    /// Indicates a failure in running the build command.
-    ///
-    /// the `duct` crate does not provide exit status
-    /// codes when running with `stderr_to_stdout`, which
-    /// is why little context can be provided.
-    CompilationFailed {
-        /// The message that the program would like to give.
-        message: &'static str,
-    },
-
-    /// An error that doesnt apply to any of the variants
-    Other {
-        /// Context (cause, if any)
-        ctx: Option<AnyError>,
-    },
-}
 
 #[derive(Debug)]
 /// An smbuilder-related error.
@@ -77,29 +66,22 @@ impl fmt::Display for ErrorCause {
                 to.display(),
                 format_any_error(ctx)
             ),
-            C::CompilationFailed { message } => write!(f, "compilation failed: {}", message),
-            C::Other { ctx } => write!(f, "an unexpected error occured{}", format_any_error(ctx)),
+            C::CompilationFailed { msg } => write!(f, "compilation failed: {}", msg),
+            C::Other { ctx } => write!(f, "an unexpected error occured{}", format_any_error(ctx),),
         }
     }
 }
 
 impl Error {
     /// Creates a new `SmbuilderError`.
-    pub fn new<S: ToString>(cause: ErrorCause, description: Option<S>) -> Self {
-        Error {
-            cause,
-            description: if let Some(s) = description {
-                Some(s.to_string())
-            } else {
-                None
-            },
-        }
+    pub fn new(cause: ErrorCause, description: Option<String>) -> Self {
+        Error { cause, description }
     }
 }
 
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let displayed_string = if let Some(d) = self.description {
+        let displayed_string = if let Some(d) = &self.description {
             format!("{}{}: {}", "error: ".bold().red(), self.cause, d)
         } else {
             format!("{}{}", "error: ".bold().red(), self.cause)

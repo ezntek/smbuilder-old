@@ -17,6 +17,10 @@ pub use crate::spec::*;
 // core types
 pub use crate::types::*;
 
+// errors
+pub use crate::error::macros as error_macros;
+pub use crate::error::{Error, ErrorCause};
+pub use error_macros::err;
+
 // other stuff
-pub use crate::error::Error;
 pub use romconvert::*;

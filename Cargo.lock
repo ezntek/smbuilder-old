@@ -736,7 +736,7 @@ dependencies = [
 
 [[package]]
 name = "smbuilder"
-version = "0.1.0-alpha"
+version = "0.1.0"
 dependencies = [
  "colored",
  "ctrlc",

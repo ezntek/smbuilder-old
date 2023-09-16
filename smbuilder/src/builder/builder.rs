@@ -1,4 +1,5 @@
 use super::get_needed_setup_tasks;
+use super::types::BuilderResult;
 use super::types::{
     PostBuildStage::*,
     SetupStage::{self, *},
@@ -6,7 +7,9 @@ use super::types::{
 
 use crate::callback_types::LogType::{self, *};
 use crate::callbacks::run_callback;
-use crate::prelude::{Callbacks, Error, Spec};
+use crate::error::ErrorCause;
+use crate::prelude::error_macros::*;
+use crate::prelude::{err, Callbacks, Error, Spec};
 use crate::util;
 
 use duct::cmd;
@@ -85,7 +88,7 @@ impl<'a> Builder<'a> {
         Ok(result)
     }
 
-    fn clone_repo(&mut self) -> PathBuf {
+    fn clone_repo(&mut self) -> BuilderResult<PathBuf> {
         run_callback!(self.callbacks.new_setup_stage_cb, CloneRepo);
 
         let repo_name = &self.spec.repo.name;
@@ -128,19 +131,24 @@ impl<'a> Builder<'a> {
             .remote_callbacks(remote_callbacks)
             .follow_redirects(git2::RemoteRedirect::All);
 
-        RepoBuilder::new()
+        let repo_clone_result = RepoBuilder::new()
             .branch(&self.spec.repo.branch)
             .fetch_options(fetch_options)
-            .clone(&self.spec.repo.url, &repo_dir)
-            .unwrap_or_else(|_| {
-                panic!(
-                    "failed to clone the repository from {} into {}: ",
-                    &self.spec.repo.url,
-                    &repo_dir.display()
-                )
-            });
+            .clone(&self.spec.repo.url, &repo_dir);
 
-        (*repo_dir).clone()
+        match repo_clone_result {
+            Ok(_) => (),
+            Err(e) => {
+                let msg = e.message().to_string();
+                let err = err!(
+                    c_repo_clone!(self.spec.repo.url.clone(), (*repo_dir).clone(), e),
+                    format!("failed to clone the repository: {}", msg)
+                );
+                return Err(err);
+            }
+        }
+
+        Ok((*repo_dir).clone())
     }
 
     fn copy_rom<P: AsRef<Path>>(&mut self, repo_dir: P) {
@@ -304,9 +312,10 @@ impl<'a> Builder<'a> {
         let repo_dir = &self.base_dir.join(&self.spec.repo.name);
 
         for pack in packs {
-            pack.install(&self.spec, repo_dir).unwrap_or_else(|e| {
-                run_callback!(self.callbacks.log_cb, LogType::Error, &e.to_string());
-            });
+            pack.install(&self.spec, repo_dir, &mut self.callbacks)
+                .unwrap_or_else(|e| {
+                    run_callback!(self.callbacks.log_cb, LogType::Error, &e.to_string());
+                });
         }
     }
 
