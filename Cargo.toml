@@ -2,6 +2,7 @@
 members = [
     "smbuilder",
     "smbuilder-cli",
+    "smbuilder-gui"
 ]
 
 [workspace.dependencies]

@@ -29,7 +29,7 @@ fn build(base_dir: PathBuf, callbacks: Callbacks<'static>) {
         Ok(_) => (),
         Err(e) => {
             eprintln!("{}", e.to_string());
-            std::process::exit(1);
+            return;
         }
     })
     .join()
@@ -37,17 +37,21 @@ fn build(base_dir: PathBuf, callbacks: Callbacks<'static>) {
 }
 
 fn run(base_dir: PathBuf, mut callbacks: Callbacks) {
+    macro_rules! error {
+        ($text:expr) => {
+            if let Some(cb) = &mut callbacks.log_cb {
+                cb(LogType::Error, $text.as_str());
+            };
+            std::process::exit(1);
+        };
+    }
+
     let spec = Spec::from_file_checked(base_dir.join("build.yaml"), &mut callbacks);
     let spec = match spec {
         Ok(s) => s,
         Err(e) => {
-            if let Some(cb) = &mut callbacks.log_cb {
-                cb(
-                    LogType::Error,
-                    format!("failed to open the specfile: {}", e).as_str(),
-                );
-            }
-            std::process::exit(1)
+            let msg = format!("failed to load the specfile: {}", e);
+            error!(msg);
         }
     };
     let region = spec.rom.region.to_string();
@@ -56,15 +60,16 @@ fn run(base_dir: PathBuf, mut callbacks: Callbacks) {
         .join("build")
         .join(format!("{}_pc", &region))
         .join(format!("sm64.{}.f3dex2e", &region));
+
     let mut cmd = std::process::Command::new(path);
     let mut child = cmd.spawn().unwrap_or_else(|e| {
-        // FIXME: integrate into log
-        if let Some(cb) = &mut callbacks.log_cb {
-            cb(LogType::Error, "failed to spawn the command");
-        };
-        std::process::exit(1);
+        let msg = format!("failed to spawn the command: {}", e);
+        error!(msg);
     });
-    child.wait().unwrap(); // TODO: macro out the errors
+
+    child.wait().unwrap_or_else(|e| {
+        error!(format!("failed to wait on the child process: {}", e));
+    });
 }
 
 fn main() {
