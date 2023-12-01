@@ -46,4 +46,5 @@ pub mod callbacks;
 /// Utility Functions.
 pub mod util;
 
+use error::{Error, Result};
 use prelude::{builder_types, callback_types, romconvert};

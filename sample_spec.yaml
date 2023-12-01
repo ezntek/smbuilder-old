@@ -1,3 +1,5 @@
+name: sm64ex
+
 rom:
   region: us
   path: ./rom.z64
@@ -10,12 +12,12 @@ repo:
   about: ""
   supports_dynos: false
 
-jobs: 8
-name: sm64ex
+compilerOptions:
+  jobs: 8
+  makeopts:
+    - key: DISCORDRPC
+      value: 0
 
-makeopts:
-  - key: DISCORDRPC
-    value: 0
-
-texture_pack:
-dynos_packs:
+packs:
+  texture:
+  dynos:

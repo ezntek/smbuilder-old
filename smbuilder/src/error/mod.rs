@@ -1,11 +1,9 @@
-mod cause;
+pub(crate) mod cause;
+pub mod macros;
 
 pub use cause::*;
 use colored::Colorize;
 use std::fmt;
-
-/// Error macros to shortuct the creation of error types.
-pub mod macros;
 
 type AnyError = Box<dyn std::error::Error>;
 
@@ -30,16 +28,16 @@ macro_rules! fmt_anyerr {
 
 impl fmt::Display for ErrorCause {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        use ErrorCause as C;
+        use ErrorCause as E;
         match self {
-            C::RepoClone { url, dir, ctx } => write!(
+            E::RepoClone { url, dir, ctx } => write!(
                 f,
                 "whilst trying to clone from {} to {}{}",
                 url,
                 dir.display(),
                 fmt_anyerr!(ctx)
             ),
-            C::Filesystem { msg, ctx } => {
+            E::Filesystem { msg, ctx } => {
                 write!(
                     f,
                     "whilst working with the filesystem{} ({})",
@@ -47,7 +45,7 @@ impl fmt::Display for ErrorCause {
                     msg.clone().unwrap_or(String::new()),
                 )
             }
-            C::LaunchCmdError { cmd, msg, ctx } => {
+            E::LaunchCmdError { cmd, msg, ctx } => {
                 write!(
                     f,
                     "launching the command `{}` failed{} ({})",
@@ -56,8 +54,8 @@ impl fmt::Display for ErrorCause {
                     msg.clone().unwrap_or(String::new())
                 )
             }
-            C::CompilationFailed { msg } => write!(f, "compilation failed: {}", msg),
-            C::Other { ctx } => write!(f, "an unexpected error occured{}", fmt_anyerr!(ctx),),
+            E::CompilationFailed { msg } => write!(f, "compilation failed: {}", msg),
+            E::Other { ctx } => write!(f, "an unexpected error occured{}", fmt_anyerr!(ctx),),
         }
     }
 }
@@ -82,3 +80,5 @@ impl fmt::Display for Error {
 }
 
 impl std::error::Error for Error {}
+
+pub type Result<T> = std::result::Result<T, Error>;

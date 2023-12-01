@@ -8,9 +8,9 @@ use super::Error;
 /// Rules:
 ///  * `url: String, dir: PathBuf`
 ///  * same as above but with `ctx: impl std::error::Error`
-macro_rules! c_repo_clone {
+macro_rules! err_variant_repo_clone {
     ($url:expr, $dir:expr) => {
-        ErrorCause::RepoClone {
+        crate::error::cause::ErrorCause::RepoClone {
             url: $url,
             dir: $dir,
             ctx: None,
@@ -18,7 +18,7 @@ macro_rules! c_repo_clone {
     };
 
     ($url:expr, $dir:expr, $ctx:expr) => {
-        ErrorCause::RepoClone {
+        crate::error::cause::ErrorCause::RepoClone {
             url: $url,
             dir: $dir,
             ctx: Some(Box::new($ctx)),
@@ -30,7 +30,7 @@ macro_rules! c_repo_clone {
 /// Compilation failed error cause
 ///
 /// `msg: String`
-macro_rules! c_comp_failed {
+macro_rules! err_variant_comp_failed {
     ($msg:expr) => {
         ErrorCause::CompilationFailed { msg: $msg }
     };
@@ -40,7 +40,7 @@ macro_rules! c_comp_failed {
 /// Generic error cause
 ///
 /// `ctx: impl std::error::Error`
-macro_rules! c_other {
+macro_rules! err_generic {
     ($ctx:expr) => {
         ErrorCause::Other {
             ctx: Some(Box::new($ctx)),
@@ -52,18 +52,18 @@ macro_rules! c_other {
 ///
 /// Rules:
 ///  * `ctx: std::io::Error`
-///  * same as above but with `msg: String`
+///  * `ctx: std::io::Error, msg: String`
 #[macro_export]
-macro_rules! c_fs {
+macro_rules! err_variant_fs {
     ($ctx:expr) => {
-        ErrorCause::Filesystem {
+        crate::error::cause::ErrorCause::Filesystem {
             msg: None,
             ctx: Box::new($ctx),
         }
     };
 
     ($ctx:expr,$msg:expr) => {
-        ErrorCause::Filesystem {
+        crate::error::cause::ErrorCause::Filesystem {
             msg: Some($msg.to_string()),
             ctx: Box::new($ctx),
         }
@@ -77,7 +77,7 @@ macro_rules! c_fs {
 ///  * `cmd: String`
 ///  * `cmd: String, ctx: impl std::error::Error`
 ///  * `cmd: String, msg: String, ctx: impl std::error::Error`
-macro_rules! c_spawn_cmd {
+macro_rules! err_variant_cmdlaunch {
     ($cmd:expr) => {
         ErrorCause::LaunchCmdError {
             cmd: $cmd,
@@ -103,21 +103,24 @@ macro_rules! c_spawn_cmd {
     };
 }
 
-pub use {c_comp_failed, c_fs, c_other, c_repo_clone, c_spawn_cmd};
+pub use {
+    err_generic, err_variant_cmdlaunch, err_variant_comp_failed, err_variant_fs,
+    err_variant_repo_clone,
+};
 
 #[macro_export]
 /// Instantiate an Error struct.
 ///
 /// Variants:
-///  * `cause: ErrorCause` (can be used with `c_` macros)
+///  * `cause: ErrorCause` (can be used with `err_` macros)
 ///  * same as above, but with `desc: impl ToString`
 macro_rules! err {
     ($cause:expr) => {
-        Error::new($cause, None)
+        crate::error::Error::new($cause, None)
     };
 
     ($cause:expr, $desc:expr) => {
-        Error::new($cause, Some($desc.to_string()))
+        crate::error::Error::new($cause, Some($desc.to_string()))
     };
 }
 

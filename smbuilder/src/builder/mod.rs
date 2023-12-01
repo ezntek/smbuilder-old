@@ -1,6 +1,9 @@
 /// Builder-related types.
 pub mod types;
 
+/// Various build stages that the build process is dependent on.
+pub mod deps;
+
 /// Houses the builder struct that
 /// takes care of all the building.
 pub mod builder;
@@ -15,7 +18,7 @@ use std::path::Path;
 
 /// Get the core setup tasks that are needed.
 ///
-/// Returns a list of `SmbuilderSetupStage`.
+/// Returns a list of [types::SetupStage].
 // TODO: example
 pub fn get_needed_setup_tasks<P: AsRef<Path>>(
     spec: &Spec,

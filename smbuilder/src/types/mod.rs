@@ -3,20 +3,29 @@
 /// generally set.
 pub mod makeopts;
 
-use crate::prelude::{builder_types::BuilderResult, Error};
-use crate::{c_fs, prelude::*};
+use crate::prelude::builder_types::BuilderResult; //, Error*/};
+use crate::{err_variant_fs, prelude::*};
 use std::{
     fmt::Debug,
     fs,
-    io::{self, BufWriter, Write},
-    path::Path,
+    io::{/*self,*/ BufWriter, Write},
+    //path::Path,
 };
 
-use fs_extra::dir::CopyOptions;
+//use fs_extra::dir::CopyOptions;
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
-
 extern crate fs_extra;
+
+#[derive(Clone, Default, Debug, Deserialize, Serialize)]
+pub struct CompilerOptions {
+    /// Amount of compile jobs that are allowed for the compiler.
+    ///
+    /// This will be used to set the `-j` flag during compile time.
+    pub jobs: Option<u8>,
+    /// Make flags to be passed to the compiler.
+    pub makeopts: Option<Vec<Makeopt>>,
+}
 
 #[derive(Clone, Debug, Default, Deserialize, Serialize)]
 #[serde(rename_all = "lowercase")]
@@ -35,7 +44,7 @@ pub enum Region {
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 /// Represents a ROM file.
-pub struct Rom {
+pub struct RomData {
     /// The Region of the ROM Cartridge that
     /// the ROM was pulled from.
     pub region: Region,
@@ -45,9 +54,9 @@ pub struct Rom {
     pub format: RomType,
 }
 
-impl Default for Rom {
+impl Default for RomData {
     fn default() -> Self {
-        Rom {
+        RomData {
             region: Region::Us,
             path: PathBuf::new(),
             format: RomType::BigEndian,
@@ -55,14 +64,14 @@ impl Default for Rom {
     }
 }
 
-impl Rom {
+impl RomData {
     /// Creates a new `Rom`.
     ///
     // TODO: example
-    pub fn new<P: AsRef<Path>>(region: Region, path: P, rom_format: RomType) -> Self {
-        Rom {
+    pub fn new(region: Region, path: impl Into<PathBuf>, rom_format: RomType) -> Self {
+        RomData {
             region,
-            path: path.as_ref().to_owned(),
+            path: path.into(),
             format: rom_format,
         }
     }
@@ -71,12 +80,10 @@ impl Rom {
 #[derive(Clone, Default, Debug, Deserialize, Serialize)]
 /// Represents a git repository with the
 /// source code of the a port.
-pub struct Repo {
+pub struct RepoData {
     /// The name of the repository.
     ///
-    /// Used for launchers where
-    /// the name may need to be a
-    /// little bit more user friendly.
+    /// Used for launchers where the name may need to be a little bit more user friendly.
     pub name: String,
     /// The link to the repository.
     pub url: String,
@@ -111,6 +118,12 @@ pub struct Patch {
     /// The location of the
     /// path file on disk.
     pub path: PathBuf,
+}
+
+#[derive(Clone, Debug, Default, Deserialize, Serialize)]
+pub struct PackData {
+    texture: TexturePack,
+    dynos: Option<Vec<DynosPack>>,
 }
 
 #[derive(Clone, Debug, Default, Deserialize, Serialize)]
@@ -171,8 +184,18 @@ pub struct PostBuildScript {
     pub path: Option<PathBuf>,
 }
 
+impl CompilerOptions {
+    /// Creates a new [CompilerOptions] structure.
+    pub fn new(jobs: Option<u8>, makeopts: Vec<Makeopt>) -> Self {
+        Self {
+            jobs,
+            makeopts: Some(makeopts),
+        }
+    }
+}
+
 impl Makeopt {
-    /// Creates a new `Makeopt`.
+    /// Creates a new [Makeopt].
     ///
     // TODO: example
     pub fn new<S: ToString>(key: S, value: S) -> Self {
@@ -186,36 +209,35 @@ impl Makeopt {
     /// sane defaults, and options for the
     /// current OS.
     // TODO: example
-    pub fn default_makeopts() -> Vec<Self> {
-        let mut makeopts: Vec<Makeopt> = Vec::new();
-
-        // make a macro to make life easier
-        macro_rules! push_makeopt {
+    pub fn get_defaults() -> Vec<Self> {
+        // convenience macro
+        macro_rules! makeopt {
             ($key:expr,$value:expr) => {
-                makeopts.push(Makeopt::new($key, $value))
+                Makeopt::new($key, $value)
             };
         }
 
-        // enable external data
-        push_makeopt!("EXTERNAL_DATA", "1");
-
-        // force the modern APIs
-        push_makeopt!("RENDER_API", "GL");
-        push_makeopt!("WINDOW_API", "SDL2");
-        push_makeopt!("AUDIO_API", "SDL2");
-        push_makeopt!("CONTROLLER_API", "SDL2");
+        let mut makeopts: Vec<Makeopt> = vec![
+            // enable extrnal data
+            makeopt!("EXTERNAL_DATA", "1"),
+            // force modern graphics APIs
+            makeopt!("RENDER_API", "GL"),
+            makeopt!("WINDOW_API", "SDL2"),
+            makeopt!("AUDIO_API", "SDL2"),
+            makeopt!("CONTROLLER_API", "SDL2"),
+        ];
 
         // macOS stuff
         #[cfg(target_os = "macos")]
         {
-            push_makeopt!("OSX_BUILD", "1");
-            push_makeopt!("TARGET_BITS", "64");
+            makeopts.push(makeopt!("OSX_BUILD", "1"));
+            makeopts.push(makeopt!("TARGET_BITS", "64"));
 
             #[cfg(target_arch = "x86_64")]
-            push_makeopt!("TARGET_ARCH", "x86_64-apple-darwin");
+            makeopts.push(makeopt!("TARGET_ARCH", "x86_64-apple-darwin"));
 
             #[cfg(target_arch = "aarch64")]
-            push_makeopt!("TARGET_ARCH", "aarch64-apple-darwin");
+            makeopts.push(makeopt!("TARGET_ARCH", "aarch64-apple-darwin"));
         };
 
         makeopts
@@ -236,16 +258,19 @@ impl PostBuildScript {
     /// a `Path`.
     ///
     // TODO: example
-    pub fn from_file<S, P>(name: S, description: S, file: P) -> BuilderResult<Self>
-    where
-        S: ToString,
-        P: AsRef<Path>,
-    {
-        let file = file.as_ref().to_owned();
+    pub fn from_file(
+        name: impl ToString,
+        description: String,
+        file: impl Into<PathBuf>,
+    ) -> BuilderResult<Self> {
+        let file = file.into();
         let file_contents = match fs::read_to_string(&file) {
             Ok(f) => f,
             Err(e) => {
-                let err = err!(c_fs!(e, format!("failed to read {}", file.display())));
+                let err = err!(err_variant_fs!(
+                    e,
+                    format!("failed to read {}", file.display())
+                ));
                 return Err(err);
             }
         };
@@ -264,15 +289,15 @@ impl PostBuildScript {
     /// File path.
     ///
     // TODO: example
-    pub fn save<P: AsRef<Path>>(&mut self, scripts_dir: P) -> BuilderResult<PathBuf> {
-        let mut script_path = scripts_dir.as_ref().join(&self.name);
+    pub fn save(&mut self, scripts_dir: impl Into<PathBuf>) -> BuilderResult<PathBuf> {
+        let mut script_path = scripts_dir.into().join(&self.name);
         script_path.set_extension("sh");
 
         let script_file = match fs::File::create(&script_path) {
             Ok(f) => f,
             Err(e) => {
                 let err = err!(
-                    c_fs!(
+                    err_variant_fs!(
                         e,
                         format!("whilst trying to create {}", script_path.display())
                     ),
@@ -288,7 +313,7 @@ impl PostBuildScript {
             Ok(_) => (),
             Err(e) => {
                 let err = err!(
-                    c_fs!(
+                    err_variant_fs!(
                         e,
                         format!("whilst trying to write to {}", script_path.display())
                     ),
@@ -307,25 +332,23 @@ impl DynosPack {
     /// Creates a new DynOS pack.
     ///
     // TODO: example
-    pub fn new<S, P>(name: S, path: P) -> Self
-    where
-        S: ToString,
-        P: Into<PathBuf>,
-    {
+    pub fn new(name: impl ToString, path: impl Into<PathBuf>) -> Self {
         DynosPack {
             name: name.to_string(),
             path: path.into(),
         }
     }
 
+    /*
     /// Installs the DynOS pack (copies it
     /// into the correct location)
     ///
     // TODO: example
-    pub fn install<P: AsRef<Path>>(
+
+    pub fn install(
         &self,
         spec: &Spec,
-        repo_dir: P,
+        repo_dir: impl AsRef<Path>,
         callbacks: &mut Callbacks,
     ) -> BuilderResult<()> {
         if !spec.repo.supports_dynos {
@@ -353,7 +376,7 @@ impl DynosPack {
                     &target_path.display(),
                     e
                 );
-                let err = err!(c_fs!(e, msg), "failed to copy the DynOS pack");
+                let err = err!(err_variant_fs!(e, msg), "failed to copy the DynOS pack");
                 return Err(err);
             }
         };
@@ -381,7 +404,7 @@ impl DynosPack {
 
         fs_extra::dir::remove(target_path)
             .unwrap_or_else(|e| panic!("failed to remove the directory: {}", e));
-    }
+    }*/
 }
 
 impl TexturePack {
@@ -399,10 +422,12 @@ impl TexturePack {
         }
     }
 
+    /*
     /// Installs the Texture pack (copies
     /// it into the correct location)
     ///
     // TODO: example
+
     pub fn install<P: AsRef<Path>>(&self, spec: &Spec, repo_dir: P) -> Result<(), Error> {
         let target_path = repo_dir
             .as_ref()
@@ -420,7 +445,7 @@ impl TexturePack {
                 "could not find the gfx directory in the texture pack path!",
             );
 
-            let err = err!(c_fs!(inner_err), "invalid texture pack"); // TODO:
+            let err = err!(err_variant_fs!(inner_err), "invalid texture pack"); // TODO:
             return Err(err);
         };
 
@@ -450,17 +475,18 @@ impl TexturePack {
         fs_extra::dir::remove(target_path)
             .unwrap_or_else(|e| panic!("could not find the texture pack to remove: {}", e));
     }
+    */
 }
 /*
 impl Patch {
-    fn new<S: ToString, P: Into<PathBuf>>(name: S, path: P) -> Self {
+    fn new(name: impl ToString, path: impl Into<PathBuf>) -> Self {
         Patch {
             name: name.to_string(),
             path: path.into(),
         }
     }
 
-    fn patch<P: AsRef<Path>>(&self, spec: &Spec, repo_dir: P) -> Result<(), SmbuilderError> {
+    fn patch(&self, spec: &Spec, repo_dir: impl AsRef<Path>) -> Result<(), SmbuilderError> {
         Ok(())
     }
 }*/
