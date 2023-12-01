@@ -1,3 +1,7 @@
+# NOTE
+
+This branch contains the work-in-progress API rework of smbuilder, which will be based off of dependency injection.
+
 # smbuilder
 
 Remember how cool smlinux was? ***It's now time to bring it back (kinda).***
