@@ -11,6 +11,7 @@ repo:
   branch: nightly
   about: ""
   supports_dynos: false
+  deep_clone: false
 
 compilerOptions:
   jobs: 8

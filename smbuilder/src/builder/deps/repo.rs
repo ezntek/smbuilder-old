@@ -2,16 +2,21 @@ use std::path::{Path, PathBuf};
 
 use git2::{build::RepoBuilder, FetchOptions, RemoteCallbacks};
 
-use super::Repository;
-use crate::{err, err_variant_fs, err_variant_repo_clone, prelude::RepoData};
+use super::RepoManager;
+use crate::{
+    callbacks::{run_callback, Callbacks},
+    err, err_variant_fs, err_variant_repo_clone,
+    prelude::RepoData,
+};
 
-pub struct GitRepo<'d> {
+pub struct GitRepo<'d, 'cb> {
     repo_dir: PathBuf,
+    callbacks: &'cb mut Callbacks<'cb>,
     repo_data: &'d RepoData,
 }
 
-impl<'d> Repository for GitRepo<'d> {
-    fn clone(&self) -> crate::Result<()> {
+impl<'d, 'cb> RepoManager for GitRepo<'d, 'cb> {
+    fn clone(&mut self) -> crate::Result<()> {
         // Implement progress reporting
 
         let repo_name = &self.repo_data.name;
@@ -19,22 +24,19 @@ impl<'d> Repository for GitRepo<'d> {
 
         let mut remote_cbs = RemoteCallbacks::new();
         remote_cbs.transfer_progress(|progress| {
-            // TODO: move this into progress reporter
-            let recv_objs = progress.received_objects();
-            let total_objs = progress.total_objects();
-            print!(
-                "Repository Clone: {}/{} ({}%) objects transferred ({} KiB transferred)\r",
-                recv_objs,
-                total_objs,
-                (recv_objs * 100) / total_objs,
-                (progress.received_bytes() as f64 / 1024_f64).floor()
+            run_callback!(
+                self.callbacks.repo_clone_progress,
+                progress.received_objects(),
+                progress.total_objects(),
+                progress.received_bytes()
             );
 
             true
         });
 
         let mut fetch_options = FetchOptions::new();
-        fetch_options.remote_callbacks(remote_cbs);
+        let depth = if self.repo_data.deep_clone { 0 } else { 1 };
+        fetch_options.remote_callbacks(remote_cbs).depth(depth);
 
         let clone_result = RepoBuilder::new()
             .branch(&self.repo_data.branch)
@@ -55,8 +57,6 @@ impl<'d> Repository for GitRepo<'d> {
     }
 
     fn clean(&self) -> crate::Result<()> {
-        eprintln!("exiting on ctrl-c...");
-
         if !self.repo_dir.exists() {
             return Ok(());
         }
@@ -79,14 +79,19 @@ impl<'d> Repository for GitRepo<'d> {
     }
 }
 
-impl<'d> GitRepo<'d> {
-    pub fn new(repo_base_dir: impl Into<PathBuf>, repo_data: &'d RepoData) -> Self {
+impl<'d, 'cb> GitRepo<'d, 'cb> {
+    pub fn new(
+        repo_base_dir: impl Into<PathBuf>,
+        repo_data: &'d RepoData,
+        callbacks: &'cb mut Callbacks<'cb>,
+    ) -> Self {
         let repo_dir = repo_base_dir.into();
         let repo_dir = repo_dir.join(&repo_data.name);
 
         Self {
             repo_dir,
             repo_data,
+            callbacks,
         }
     }
 }

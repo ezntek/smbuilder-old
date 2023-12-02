@@ -18,7 +18,7 @@ use std::path::Path;
 
 /// Get the core setup tasks that are needed.
 ///
-/// Returns a list of [types::SetupStage].
+/// Returns a list of [SetupStage].
 // TODO: example
 pub fn get_needed_setup_tasks<P: AsRef<Path>>(
     spec: &Spec,
@@ -57,7 +57,7 @@ pub fn get_needed_setup_tasks<P: AsRef<Path>>(
         .join(", ");
 
     run_callback!(
-        callbacks.log_cb,
+        callbacks.log,
         Info,
         &format!("needed tasks: {}", needed_stages_string)
     );

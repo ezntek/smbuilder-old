@@ -94,7 +94,7 @@ impl Spec {
 
         if verified_rom_format != self.rom.format {
             run_callback!(
-                callbacks.log_cb,
+                callbacks.log,
                 L::Warn,
                 &format!(
                     "the ROM format specified in the spec ({:?}) does not match the file ({:?})!",
@@ -107,13 +107,13 @@ impl Spec {
 
         if self.compiler_options.jobs.is_none() {
             run_callback!(
-                callbacks.log_cb,
+                callbacks.log,
                 L::Warn,
                 "did not find a value for jobs in the spec!"
             );
 
             run_callback!(
-                callbacks.log_cb,
+                callbacks.log,
                 L::Warn,
                 "it is highly advised for you to specify the variable!"
             );

@@ -94,6 +94,8 @@ pub struct RepoData {
     pub about: String,
     /// Does this repo support DynOS packs?
     pub supports_dynos: bool,
+    /// Should the repository be shallow-cloned or not (--depth=1 or no?)
+    pub deep_clone: bool,
 }
 
 #[derive(Clone, Debug, Default, Deserialize, Serialize)]
@@ -122,8 +124,8 @@ pub struct Patch {
 
 #[derive(Clone, Debug, Default, Deserialize, Serialize)]
 pub struct PackData {
-    texture: TexturePack,
-    dynos: Option<Vec<DynosPack>>,
+    pub texture: Option<TexturePack>,
+    pub dynos: Option<Vec<DynosPack>>,
 }
 
 #[derive(Clone, Debug, Default, Deserialize, Serialize)]
